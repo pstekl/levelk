@@ -2,8 +2,6 @@
 //B is 0
 template<typename T>
 class levelkworld {
-  T lkr[4]; //lkratio
-  T q;        //prob q that signal is correct
 public:
   levelkworld(T l0ratio, T l1ratio, T l2ratio, T l3ratio, T q_) :
     lkr{l0ratio, l1ratio, l2ratio, l3ratio}, q(q_) {
@@ -11,6 +9,8 @@ public:
       updatep();
     }
 
+  T lkr[4]; //lkratio
+  T q;        //prob q that signal is correct
   //calculate probability p that A comes for each situation
   //in the same situation probability for B is of course 1-p
   T p[9];
@@ -75,24 +75,39 @@ public:
 
 };
 
-//randomly return 0 or 1 with probability 0.5
-int level0(boost::dynamic_bitset<> seq, int signal){
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_int_distribution<> dis(0, 1);
-  return dis(gen);
-}
-//return signal
-int level1(boost::dynamic_bitset<> seq, int signal){
-  return signal;
-}
+
+
+
+// int signal(double q = 0.6) {
+//   std::random_device rd;
+//   std::mt19937 gen(rd());
+//   std::discrete_distribution<> distrib({ 1-q, q });
+//   return distrib(gen);
+// }
+
+
+// //randomly return 0 or 1 with probability 0.5
+// int level0(boost::dynamic_bitset<> seq, int signal){
+//   std::random_device rd;
+//   std::mt19937 gen(rd());
+//   std::uniform_int_distribution<> dis(0, 1);
+//   return dis(gen);
+// }
+// //return signal
+// int level1(boost::dynamic_bitset<> seq, int signal){
+//   return signal;
+// }
+
+
+
+
 //detect cascade
 //@param cascade =0 NC, 1 AC, 2 BC
-int level2(boost::dynamic_bitset<> seq, int signal, int& cascade){
+int level2(boost::dynamic_bitset<> seq, int signal, int t, int& cascade){
   int A=0;
   int B=0;
   //just observe until t-1
-  for (boost::dynamic_bitset<>::size_type i = 0; i < seq.size()-1; ++i) {
+  for (boost::dynamic_bitset<>::size_type i = 0; i < t-1; ++i) {
     if(seq[i] == 1) {
       A+=1;
     }
@@ -119,7 +134,7 @@ int level2(boost::dynamic_bitset<> seq, int signal, int& cascade){
 
 //detect cascade and detect fake cascade
 //@param cascade =0 NC, 1 AC, 2 BC
-int level3(boost::dynamic_bitset<> seq, int signal, int& cascade){
+int level3(boost::dynamic_bitset<> seq, int signal, int t, int& cascade){
   int A=0;
   int B=0;
   int level3A=0;
@@ -127,7 +142,7 @@ int level3(boost::dynamic_bitset<> seq, int signal, int& cascade){
 
 
   //just observe until t-1
-  for (boost::dynamic_bitset<>::size_type i = 0; i < seq.size()-1; ++i) {
+  for (boost::dynamic_bitset<>::size_type i = 0; i < t-1; ++i) {
 
     //check for level2 cascade
     if(std::abs(A-B)>1) {
@@ -185,420 +200,247 @@ int level3(boost::dynamic_bitset<> seq, int signal, int& cascade){
 
 
 template <typename T>
-void tab2nc(T q, levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct, std::vector<double>& res){
-
-    // p[0] = nc();
-    // p[1] = l2l3A();
-    // p[2] = l2l3B();
-    // p[3] = l2A();
-    // p[4] = l2B();
-    // p[5] = l3A();
-    // p[6] = l3B();
+void tab2(levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct, int i, std::vector<double>& res){
 
   double tmp=1.;
-
-  //check for no cascade
-  for(int i=0; i < ct.size(); ++i){
-    tmp=1.;
-    if( (ct[i] == w.p[0]) || (ct[i] == 1.-w.p[0]) ) {
+  //check for all 9 cases
+  for(int k=0; k<9; ++k) {
+    if( (ct[i] == w.p[k]) || (ct[i] == 1.-w.p[k]) ) {
       for(int j=0; j<i+1; ++j){
         tmp *= ct[j];
       }
-      res.push_back(tmp);
+      res[k] = tmp;
+      //speed up computation, because these others results must be zero
+      for(int l=k+1; l<9; ++l){
+        res[l] = 0.;
+      }
+      break;
     }
     else{
-      res.push_back(0.);
+      res[k] = 0.;
     }
-
   }
-
-  // std::cout<<"Table2 No cascade:"<<std::endl;
-  // for(std::vector<double>::iterator it = res.begin(); it != res.end(); ++it){
-  //   std::cout<<*it<<std::endl;
-  // }
 
   return;
 }
-template <typename T>
-void tab2l2l3A(T q, levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct, std::vector<double>& res){
-
-    // p[0] = nc();
-    // p[1] = l2l3A();
-    // p[2] = l2l3B();
-    // p[3] = l2A();
-    // p[4] = l2B();
-    // p[5] = l3A();
-    // p[6] = l3B();
-
-  double tmp=1.;
-
-  //check for l2l3A
-  for(int i=0; i < ct.size(); ++i){
-    tmp=1.;
-    if( (ct[i] == w.p[1]) || (ct[i] == 1.-w.p[1]) ) {
-      for(int j=0; j<i+1; ++j){
-        tmp *= ct[j];
-      }
-      res.push_back(tmp);
-    }
-    else{
-      res.push_back(0.);
-    }
-
-  }
-
-}
-
-template <typename T>
-void tab2l2l3B(T q, levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct, std::vector<double>& res){
-
-    // p[0] = nc();
-    // p[1] = l2l3A();
-    // p[2] = l2l3B();
-    // p[3] = l2A();
-    // p[4] = l2B();
-    // p[5] = l3A();
-    // p[6] = l3B();
-
-  double tmp=1.;
-
-  //check for l2l3A
-  for(int i=0; i < ct.size(); ++i){
-    tmp=1.;
-    if( (ct[i] == w.p[2]) || (ct[i] == 1.-w.p[2]) ) {
-      for(int j=0; j<i+1; ++j){
-        tmp *= ct[j];
-      }
-      res.push_back(tmp);
-    }
-    else{
-      res.push_back(0.);
-    }
-
-  }
-
-}
-
-template <typename T>
-void tab2l2A(T q, levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct, std::vector<double>& res){
-
-    // p[0] = nc();
-    // p[1] = l2l3A();
-    // p[2] = l2l3B();
-    // p[3] = l2A();
-    // p[4] = l2B();
-    // p[5] = l3A();
-    // p[6] = l3B();
-
-  double tmp=1.;
-
-  //check for l2l3A
-  for(int i=0; i < ct.size(); ++i){
-    tmp=1.;
-    if( (ct[i] == w.p[3]) || (ct[i] == 1.-w.p[3]) ) {
-      for(int j=0; j<i+1; ++j){
-        tmp *= ct[j];
-      }
-      res.push_back(tmp);
-    }
-    else{
-      res.push_back(0.);
-    }
-
-  }
-
-}
-
-template <typename T>
-void tab2l2B(T q, levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct, std::vector<double>& res){
-
-    // p[0] = nc();
-    // p[1] = l2l3A();
-    // p[2] = l2l3B();
-    // p[3] = l2A();
-    // p[4] = l2B();
-    // p[5] = l3A();
-    // p[6] = l3B();
-
-  double tmp=1.;
-
-  //check for l2l3A
-  for(int i=0; i < ct.size(); ++i){
-    tmp=1.;
-    if( (ct[i] == w.p[4]) || (ct[i] == 1.-w.p[4]) ) {
-      for(int j=0; j<i+1; ++j){
-        tmp *= ct[j];
-      }
-      res.push_back(tmp);
-    }
-    else{
-      res.push_back(0.);
-    }
-
-  }
-
-}
-
-
-template <typename T>
-void tab2l3A(T q, levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct, std::vector<double>& res){
-
-    // p[0] = nc();
-    // p[1] = l2l3A();
-    // p[2] = l2l3B();
-    // p[3] = l2A();
-    // p[4] = l2B();
-    // p[5] = l3A();
-    // p[6] = l3B();
-
-  double tmp=1.;
-
-  //check for l2l3A
-  for(int i=0; i < ct.size(); ++i){
-    tmp=1.;
-    if( (ct[i] == w.p[5]) || (ct[i] == 1.-w.p[5]) ) {
-      for(int j=0; j<i+1; ++j){
-        tmp *= ct[j];
-      }
-      res.push_back(tmp);
-    }
-    else{
-      res.push_back(0.);
-    }
-
-  }
-
-}
-
-
-template <typename T>
-void tab2l3B(T q, levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct, std::vector<double>& res){
-
-    // p[0] = nc();
-    // p[1] = l2l3A();
-    // p[2] = l2l3B();
-    // p[3] = l2A();
-    // p[4] = l2B();
-    // p[5] = l3A();
-    // p[6] = l3B();
-
-  double tmp=1.;
-
-  //check for l2l3A
-  for(int i=0; i < ct.size(); ++i){
-    tmp=1.;
-    if( (ct[i] == w.p[6]) || (ct[i] == 1.-w.p[6]) ) {
-      for(int j=0; j<i+1; ++j){
-        tmp *= ct[j];
-      }
-      res.push_back(tmp);
-    }
-    else{
-      res.push_back(0.);
-    }
-
-  }
-
-}
-
-
-
-template <typename T>
-void tab2l2Al3B(T q, levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct, std::vector<double>& res){
-
-  double tmp=1.;
-
-  //check for l2l3A
-  for(int i=0; i < ct.size(); ++i){
-    tmp=1.;
-    if( (ct[i] == w.p[7]) || (ct[i] == 1.-w.p[7]) ) {
-      for(int j=0; j<i+1; ++j){
-        tmp *= ct[j];
-      }
-      res.push_back(tmp);
-    }
-    else{
-      res.push_back(0.);
-    }
-  }
-
-}
-
-
-template <typename T>
-void tab2l2Bl3A(T q, levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct, std::vector<double>& res){
-
-  double tmp=1.;
-
-  //check for l2l3A
-  for(int i=0; i < ct.size(); ++i){
-    tmp=1.;
-    if( (ct[i] == w.p[8]) || (ct[i] == 1.-w.p[8]) ) {
-      for(int j=0; j<i+1; ++j){
-        tmp *= ct[j];
-      }
-      res.push_back(tmp);
-    }
-    else{
-      res.push_back(0.);
-    }
-  }
-
-}
-
-
 
 
 
 
 //compute tab1 coloured table
 template <typename T>
-T coltab(boost::dynamic_bitset<>& x, T q, levelkworld<T> lkw, std::vector<T>& res){
-  //T res=1.;
+T coltab(boost::dynamic_bitset<>& x, levelkworld<T> w, std::vector<double>& res){
+
+
 
   for(int i=0; i<x.size(); ++i){
-  int l2c=-1;
-  int l3c=-1;
-    //create copy of bitset up to bit i
-    boost::dynamic_bitset<> y(i+1);
-    for(int j=0; j<i+1; ++j){
-      y[j] = x[j];
-    }
+    int l2c=-1;
+    int l3c=-1;
+
     //check in which state the levelks would be at bit i
     //@param cascade =0 NC, 1 AC, 2 BC
-    level2(y, 0, l2c);
-    level3(y, 0, l3c);
-
+    level2(x, 0, i+1, l2c);
+    level3(x, 0, i+1, l3c);
     //std::cout<<"l2c: "<<l2c<<std::endl;
     //std::cout<<"l3c: "<<l3c<<std::endl;
-
     //both A cascade
     if(l2c==1 && l3c==1) {
-      //res *= lkw.p[1];
-
+      //res *= w.p[1];
       // A push back prob for A
-      if(y[i] == 1) {
-        res.push_back(lkw.p[1]);
+      if(x[i] == 1) {
+        res[i] = w.p[1];
       }
       else{ // B push back prob for B
-        res.push_back(1.- lkw.p[1]);
+        res[i] = 1.- w.p[1];
       }
       continue;
     }
     //both B cascade
     if(l2c==2 && l3c==2) {
-      //res *= lkw.p[2];
-            // A push back prob for A
-      if(y[i] == 1) {
-        res.push_back(lkw.p[2]);
+      //res *= w.p[2];
+      // A push back prob for A
+      if(x[i] == 1) {
+        res[i] = w.p[2];
       }
       else{ // B push back prob for B
-        res.push_back(1.- lkw.p[2]);
+        res[i] = 1.- w.p[2];
       }
       continue;
     }
     // l2 A, l3 nc
     if(l2c==1 && l3c==0) {
-      //res *= lkw.p[3];
-             // A push back prob for A
-      if(y[i] == 1) {
-        res.push_back(lkw.p[3]);
+      //res *= w.p[3];
+      // A push back prob for A
+      if(x[i] == 1) {
+        res[i] = w.p[3];
       }
       else{ // B push back prob for B
-        res.push_back(1.- lkw.p[3]);
+        res[i] = 1.- w.p[3];
       }
-       continue;
+      continue;
     }
     //l2B, l3 nc
     if(l2c==2 && l3c==0) {
-      //res *= lkw.p[4];
-            // A push back prob for A
-      if(y[i] == 1) {
-        res.push_back(lkw.p[4]);
+      //res *= w.p[4];
+      // A push back prob for A
+      if(x[i] == 1) {
+        res[i] = w.p[4];
       }
       else{ // B push back prob for B
-        res.push_back(1.- lkw.p[4]);
+        res[i] = 1.- w.p[4];
       }
       continue;
     }
     //l3A, l2 nc
     if(l2c==0 && l3c==1) {
-      //res *= lkw.p[5];
-            // A push back prob for A
-      if(y[i] == 1) {
-        res.push_back(lkw.p[5]);
+      //res *= w.p[5];
+      // A push back prob for A
+      if(x[i] == 1) {
+        res[i] = w.p[5];
       }
       else{ // B push back prob for B
-        res.push_back(1.- lkw.p[5]);
+        res[i] = 1.- w.p[5];
       }
       continue;
     }
     //l3B, l2nc
     if(l2c==0 && l3c==2) {
-      //res *= lkw.p[6];
-            // A push back prob for A
-      if(y[i] == 1) {
-        res.push_back(lkw.p[6]);
+      //res *= w.p[6];
+      // A push back prob for A
+      if(x[i] == 1) {
+        res[i] = w.p[6];
       }
       else{ // B push back prob for B
-        res.push_back(1.- lkw.p[6]);
+        res[i] = 1.- w.p[6];
       }
-       continue;
+      continue;
     }
     //no cascade
     if(l2c==0 && l3c==0) {
-      //res *= lkw.p[0];
-            // A push back prob for A
-      if(y[i] == 1) {
-        res.push_back(lkw.p[0]);
+      //res *= w.p[0];
+      // A push back prob for A
+      if(x[i] == 1) {
+        res[i] = w.p[0];
       }
       else{ // B push back prob for B
-        res.push_back(1.- lkw.p[0]);
+        res[i] = 1.- w.p[0];
       }
       continue;
     }
-
-   // l2A l3 B
+    // l2A l3 B
     if(l2c==1 && l3c==2) {
-      //res *= lkw.p[0];
-            // A push back prob for A
-      if(y[i] == 1) {
-        res.push_back(lkw.p[7]);
+      //res *= w.p[0];
+      // A push back prob for A
+      if(x[i] == 1) {
+        res[i] = w.p[7];
       }
       else{ // B push back prob for B
-        res.push_back(1.- lkw.p[7]);
+        res[i] = 1.- w.p[7];
       }
       continue;
     }
-   // l2B l3 A
+    // l2B l3 A
     if(l2c==2 && l3c==1) {
-      //res *= lkw.p[0];
-            // A push back prob for A
-      if(y[i] == 1) {
-        res.push_back(lkw.p[8]);
+      //res *= w.p[0];
+      // A push back prob for A
+      if(x[i] == 1) {
+        res[i] = w.p[8] ;
       }
       else{ // B push back prob for B
-        res.push_back(1.- lkw.p[8]);
+        res[i] = 1.- w.p[8];
       }
       continue;
     }
     else{
       std::cout<<"ERROR: unspecified case in col tab"<<std::endl;
     }
-
   }
-  // for(std::vector<double>::iterator it = res.begin(); it != res.end(); ++it){
-  //   std::cout<<*it<<std::endl;
-  // }
+
   return 0.;
 }
 
 
 
 
+//calculate efficiency
+template <typename T>
+void efficiency(levelkworld<T>& w, std::vector<std::vector<double>>& pt) {
+  for(int i=0; i<pt[0].size(); ++i){
+    pt[10][i] = 0.5*w.lkr[0] + w.q * w.lkr[1] + w.lkr[2] * (  w.q*( pt[0][i] + pt[5][i] + pt[6][i] ) + pt[4][i] + pt[1][i] + pt[7][i]  )
+      + w.lkr[3] * ( w.q*( pt[0][i] + pt[3][i] + pt[4][i] ) + pt[5][i] + pt[1][i] + pt[8][i]     );
+  }
+}
+
+//calculate public belief
+template <typename T>
+void publicbelief(levelkworld<T>& w, std::vector<std::vector<double>>& pt) {
+  double pbnc = 0.5*w.lkr[0] + w.q * (w.lkr[1] + w.lkr[2] + w.lkr[3]);
+  double pbcr = 0.5*w.lkr[0] + w.q * w.lkr[1] + w.lkr[2] + w.lkr[3];
+  double pbl2cl3nc = 0.5*w.lkr[0] + w.q * (w.lkr[1] + w.lkr[3]) + w.lkr[2];
+  double pbl2ncl3c = 0.5*w.lkr[0] + w.q * (w.lkr[1] + w.lkr[2]) + w.lkr[3];
+  for(int i=0; i<pt[0].size(); ++i){
+    pt[11][i] = pbnc*pt[0][i] + pbcr*( pt[1][i] + pt[2][i] + pt[7][i] + pt[8][i] )
+      + pbl2cl3nc * ( pt[3][i] + pt[4][i]  )
+      + pbl2ncl3c * ( pt[5][i] + pt[6][i]   );
+  }
+}
+
+typedef std::numeric_limits< double > dbl;
+
+//output
+template <typename T>
+void output(levelkworld<T>& w, int t0, int tn, std::vector<std::vector<double>>& pt){
 
 
+  std::ofstream output;
+  output.precision(dbl::digits10);
+  output.setf( std::ios::fixed);
+  output.open ("result.csv");
 
+  //level k world parameters
+  std::vector<std::string> lkwrows{"l0ratio", "l1ratio", "l2ratio", "l3ratio"};
+  output << "level k world parameters\n";
+  for(int i=0; i<4; ++i){
+    output << lkwrows[i]<<","<<w.lkr[i] <<"\n";
+  }
+  output <<"signal,"<<w.q<<"\n\n";
+
+  std::vector<std::string> rows{"NC", "l2Al3A", "l2Bl3B", "l2Al3NC", "l2Bl3NC", "l3Al2NC", "l3Bl2NC", "l2Al3B", "l2Bl3A",
+      "CHKSUM", "efficiency", "publicbelief"};
+
+  output<<"P(at|w=A)";
+  for(int i=0; i<9; ++i){
+    output<<","<<rows[i];
+  }
+  output<<std::endl;
+  output<<"A";
+  for(int i=0; i<9; ++i){
+    output<<","<<w.p[i];
+  }
+  output<<std::endl;
+  output<<"B";
+  for(int i=0; i<9; ++i){
+    output<<","<<1.- w.p[i];
+  }
+  output<<std::endl;
+  output<<std::endl;
+
+  output <<"t";
+  for(int i=t0; i<tn;++i) {
+    output<<","<<i+1;
+  }
+  output << "\n";
+  for(int j=0; j<pt.size(); ++j){
+    output<<rows[j];
+    for(int i=0; i < pt[j].size(); ++i){
+      output<<","<<pt[j][i];
+    }
+    output<<"\n";
+  }
+
+  output.close();
+
+}
 
 
 
