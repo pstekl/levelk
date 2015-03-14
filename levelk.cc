@@ -15,18 +15,94 @@
 
 
 
+template <typename T>
+void cascadefrequency(levelkworld<T> w, int tn){
+
+  std::vector<std::vector<double>> fcas(9, std::vector<double>(tn,0));
+  std::vector<int> fsw(4,0);
+
+  //create sequences
+  for(unsigned long j=0; j < (1<<(tn)); ++j){
+
+    boost::dynamic_bitset<> x(tn, j);
+    std::vector<double> ct(tn,0.);
+
+    // for (boost::dynamic_bitset<>::size_type k = 0; k < x.size(); ++k)
+    //   std::cout << x[k];
+    // std::cout << "\n";
+
+    coltab(x, w, ct);
+    freqcas(w, ct, fcas);
+    freqswitchover(w, ct, fsw);
+
+    // for(int i=0; i<4; ++i)
+    //   std::cout<<fsw[i]<<" ";
+    // std::cout<<std::endl;
+  }
+
+  std::vector<std::vector<double>> freq(9, std::vector<double>(1,0.));
+
+  for(int i=0; i<tn; ++i){
+    for(int j=0; j<9; ++j){
+      freq[j][0] += fcas[j][i];
+    }
+  }
+
+  outputlcas(w, tn, "freqcascades.csv", freq);
+
+  outputsw(w, tn, "switchover.csv", fsw);
+
+  return ;
+}
+
+
+
+
+
+
 
 template <typename T>
-std::vector<std::vector<double>> table1(levelkworld<T> w, int t0, int tn){
+void cascadelength(levelkworld<T> w, int tn){
+
+  std::vector<std::vector<double>> lcas(9, std::vector<double>(tn,0));
+
+  //create sequences
+  for(unsigned long j=0; j < (1<<(tn)); ++j){
+
+    boost::dynamic_bitset<> x(tn, j);
+    std::vector<double> ct(tn,0.);
+
+    // for (boost::dynamic_bitset<>::size_type k = 0; k < x.size(); ++k)
+    //   std::cout << x[k];
+    // std::cout << "\n";
+
+    coltab(x, w, ct);
+    lencas(w, ct, lcas);
+  }
+
+  //output lcas
+  outputlcas(w, tn, "lencascades.csv", lcas);
+
+  return ;
+}
+
+
+
+
+
+
+//calculate and output probability of sequence,
+// efficiency and public belief
+template <typename T>
+void seqprob(levelkworld<T> w, int tn){
 
 
   //probabilities for the 9 cases + 1 chksum + 1 efficiency +1 public belief
-  std::vector<std::vector<double>> pt(12, std::vector<double>(tn-t0,0.));
+  std::vector<std::vector<double>> pt(12, std::vector<double>(tn,0.));
 
   //create sequences
-  for(unsigned long i=t0; i < tn ; ++i) {
+  for(unsigned long i=0; i < tn ; ++i) {
     for(unsigned long j=0; j < (1<<(i+1)); ++j){
-
 
       boost::dynamic_bitset<> x(i+1, j);
       std::vector<double> ct(i+1,0.);
@@ -34,13 +110,9 @@ std::vector<std::vector<double>> table1(levelkworld<T> w, int t0, int tn){
       // for (boost::dynamic_bitset<>::size_type k = 0; k < x.size(); ++k)
       //   std::cout << x[k];
       // std::cout << "\n";
+
       coltab(x, w, ct);
 
-
-      // for(int h=0; h<ct.size(); ++h){
-      //   std::cout<<ct[i]<<"\t";
-      // }
-      // std::cout<<std::endl;
 
       std::vector<double> tab2res(9,0.);
       tab2(w,x,ct,i,tab2res);
@@ -58,18 +130,14 @@ std::vector<std::vector<double>> table1(levelkworld<T> w, int t0, int tn){
   }
 
 
-
-
   //calculate efficiency
   efficiency(w, pt);
   //calculate public belief
   publicbelief(w, pt);
   //output results
-  output(w, t0, tn, pt);
+  output(w, tn, pt);
 
-
-
-  return pt;
+  return;
 }
 
 
@@ -90,9 +158,9 @@ int main() {
                         pt.get<double>("levelkworld.signal") );
 
 
-  table1(w, t0, tn);
-
-
+  seqprob(w, tn);
+  cascadelength(w, tn);
+  cascadefrequency(w, tn);
 
 
 

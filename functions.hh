@@ -1,3 +1,6 @@
+
+typedef std::numeric_limits< double > dbl;
+
 //A is 1
 //B is 0
 template<typename T>
@@ -227,6 +230,252 @@ void tab2(levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct,
 
 
 
+
+
+
+//frequency of cascades
+template <typename T>
+void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<int>& res){
+
+  //cascades can only emerge if size > 2
+  if(ct.size() < 3)
+    return;
+
+  int tmp=  -1;// last value in ct 0 A 1 B , -1 anything else
+  int lastcas= -1;  //-1 unset or no cascade, 0 A cascade 1 B cascade
+  //the first two values are always no cascade
+  for(int i=2; i < ct.size(); ++i){
+
+    //A cascade
+    if(  ((ct[i] == w.p[1]) || (ct[i] == 1. - w.p[1] )) ) {
+
+      // tmp contains informaiton about cascade of bit before
+      if ( tmp == 0 )  {//already in A cascade=> do nothing
+        continue;
+      }
+      if(lastcas == 0) { //switch over A to A cascade
+        res[0] += 1;
+      }
+      if(lastcas == 1) { //switch over B to A cascade
+        res[1] += 1;
+      }
+      lastcas = 0;
+      tmp = 0;
+      continue;
+    }
+
+    //B cascade
+    if(  ((ct[i] == w.p[2]) || (ct[i] == 1. - w.p[2] )) ) {
+
+      // tmp contains informaiton about cascade of bit before
+      if ( tmp == 1 )  {//already in B cascade=> do nothing
+        continue;
+      }
+      if(lastcas == 0) { //switch over A to B cascade
+        res[2] += 1;
+      }
+      if(lastcas == 1) { //switch over B to B cascade
+        res[3] += 1;
+      }
+      lastcas = 1;
+      tmp = 1;
+      continue;
+    }
+    //anything else in ct[i] but A or B cascade
+    tmp = -1;
+
+  }
+
+}
+
+
+
+
+//output
+template <typename T>
+void outputsw(levelkworld<T>& w, int tn, std::string filename, std::vector<int>& pt){
+
+
+  std::ofstream output;
+  output.precision(dbl::digits10);
+  output.setf( std::ios::fixed);
+  output.open (filename);
+
+
+
+  std::vector<std::string> rows{"A to A", "A to B", "B to A", "B to B"};
+
+
+  output<<std::endl;
+
+  output <<"Switch over:";
+  output << "\n";
+  for(int j=0; j<pt.size(); ++j){
+    output<<rows[j];
+    output<<","<<pt[j];
+    output<<"\n";
+  }
+
+  output.close();
+
+}
+
+
+
+
+
+
+
+
+//frequency of cascades
+template <typename T>
+void freqcas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector<double>>& res){
+
+  //cascades can only emerge if size > 2
+  if(ct.size() < 3)
+    return;
+
+
+  //the first two values are always no cascade
+  for(int i=2; i < ct.size(); ++i){
+
+    //check for all 9 cases
+    for(int k=0; k<9; ++k) {
+      int len=0;
+      for( ; ( len<ct.size() && ( (ct[i+len] == w.p[k]) || (ct[i+len] == 1. - w.p[k] ))  )   ; ++len ){
+      }
+      if(len > 0){
+
+        double tmp=1.;
+        // for(int j=0; j<i+len-1; ++j){
+        //     tmp *= ct[j];
+        // }
+        for(int j=0; j<ct.size(); ++j){
+            tmp *= ct[j];
+        }
+        res[k][len-1] += tmp;  //weighted frequency
+        //res[k][len-1] += 1; //absolute frequency
+        i += len-1;
+        //std::cout<<"k "<<k<<" len  "<<len<<"res[k][len-1]   "<<res[k][len-1]<<std::endl;
+        break; //only 1 case is possible
+      }
+    }
+  }
+
+
+
+}
+
+
+
+
+
+
+
+//length of cascades
+template <typename T>
+void lencas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector<double>>& res){
+
+  //cascades can only emerge if size > 2
+  if(ct.size() < 3)
+    return;
+
+
+  //the first two values are always no cascade
+  for(int i=2; i < ct.size(); ++i){
+
+    //check for all 9 cases
+    for(int k=0; k<9; ++k) {
+      int len=0;
+      for( ; ( len<ct.size() && ( (ct[i+len] == w.p[k]) || (ct[i+len] == 1. - w.p[k] ))  )   ; ++len ){
+      }
+      if(len > 0){
+
+        double tmp=1.;
+        // for(int j=0; j<i+len-1; ++j){
+        //     tmp *= ct[j];
+        // }
+        for(int j=0; j<ct.size(); ++j){
+            tmp *= ct[j];
+        }
+        res[k][len-1] += tmp*len;  //weighted len
+        //res[k][len-1] += len; //absolute length
+        i += len-1;
+        //std::cout<<"k "<<k<<" len  "<<len<<"res[k][len-1]   "<<res[k][len-1]<<std::endl;
+        break; //only 1 case is possible
+      }
+    }
+  }
+
+
+
+}
+
+
+//output
+template <typename T>
+void outputlcas(levelkworld<T>& w, int tn, std::string filename, std::vector<std::vector<double>>& pt){
+
+
+  std::ofstream output;
+  output.precision(dbl::digits10);
+  output.setf( std::ios::fixed);
+  output.open (filename);
+
+  // //level k world parameters
+  // std::vector<std::string> lkwrows{"l0ratio", "l1ratio", "l2ratio", "l3ratio"};
+  // output << "level k world parameters\n";
+  // for(int i=0; i<4; ++i){
+  //   output << lkwrows[i]<<","<<w.lkr[i] <<"\n";
+  // }
+  // output <<"signal,"<<w.q<<"\n\n";
+
+  std::vector<std::string> rows{"NC", "l2Al3A", "l2Bl3B", "l2Al3NC", "l2Bl3NC", "l3Al2NC", "l3Bl2NC", "l2Al3B", "l2Bl3A"};
+
+  // output<<"P(at|w=A)";
+  // for(int i=0; i<9; ++i){
+  //   output<<","<<rows[i];
+  // }
+  // output<<std::endl;
+  // output<<"A";
+  // for(int i=0; i<9; ++i){
+  //   output<<","<<w.p[i];
+  // }
+  // output<<std::endl;
+  // output<<"B";
+  // for(int i=0; i<9; ++i){
+  //   output<<","<<1.- w.p[i];
+  // }
+  // output<<std::endl;
+  output<<std::endl;
+
+  output <<"length";
+  for(int i=0; i<tn;++i) {
+    output<<","<<i+1;
+  }
+  output << "\n";
+  for(int j=0; j<pt.size(); ++j){
+    output<<rows[j];
+    for(int i=0; i < pt[j].size(); ++i){
+      output<<","<<pt[j][i];
+    }
+    output<<"\n";
+  }
+
+  output.close();
+
+}
+
+
+
+
+
+
+
+
+
+
+
 //compute tab1 coloured table
 template <typename T>
 T coltab(boost::dynamic_bitset<>& x, levelkworld<T> w, std::vector<double>& res){
@@ -385,11 +634,11 @@ void publicbelief(levelkworld<T>& w, std::vector<std::vector<double>>& pt) {
   }
 }
 
-typedef std::numeric_limits< double > dbl;
+
 
 //output
 template <typename T>
-void output(levelkworld<T>& w, int t0, int tn, std::vector<std::vector<double>>& pt){
+void output(levelkworld<T>& w, int tn, std::vector<std::vector<double>>& pt){
 
 
   std::ofstream output;
@@ -426,7 +675,7 @@ void output(levelkworld<T>& w, int t0, int tn, std::vector<std::vector<double>>&
   output<<std::endl;
 
   output <<"t";
-  for(int i=t0; i<tn;++i) {
+  for(int i=0; i<tn;++i) {
     output<<","<<i+1;
   }
   output << "\n";
