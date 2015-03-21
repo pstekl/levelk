@@ -16,10 +16,15 @@
 
 
 template <typename T>
-void cascadefrequency(levelkworld<T> w, int tn){
+void cascadestats(levelkworld<T> w, int tn){
 
+  //length
+  std::vector<std::vector<double>> lcas(9, std::vector<double>(tn,0));
+  //freq
   std::vector<std::vector<double>> fcas(9, std::vector<double>(tn,0));
+  //freq switch over
   std::vector<int> fsw(4,0);
+
 
   //create sequences
   for(unsigned long j=0; j < (1<<(tn)); ++j){
@@ -32,6 +37,7 @@ void cascadefrequency(levelkworld<T> w, int tn){
     // std::cout << "\n";
 
     coltab(x, w, ct);
+    lencas(w, ct, lcas);
     freqcas(w, ct, fcas);
     freqswitchover(w, ct, fsw);
 
@@ -50,38 +56,9 @@ void cascadefrequency(levelkworld<T> w, int tn){
 
   outputlcas(w, tn, "freqcascades.csv", freq);
 
-  outputsw(w, tn, "switchover.csv", fsw);
-
-  return ;
-}
-
-
-
-
-
-
-
-template <typename T>
-void cascadelength(levelkworld<T> w, int tn){
-
-  std::vector<std::vector<double>> lcas(9, std::vector<double>(tn,0));
-
-  //create sequences
-  for(unsigned long j=0; j < (1<<(tn)); ++j){
-
-    boost::dynamic_bitset<> x(tn, j);
-    std::vector<double> ct(tn,0.);
-
-    // for (boost::dynamic_bitset<>::size_type k = 0; k < x.size(); ++k)
-    //   std::cout << x[k];
-    // std::cout << "\n";
-
-    coltab(x, w, ct);
-    lencas(w, ct, lcas);
-  }
-
   //output lcas
   outputlcas(w, tn, "lencascades.csv", lcas);
+  outputsw(w, tn, "switchover.csv", fsw);
 
   return ;
 }
@@ -159,8 +136,7 @@ int main() {
 
 
   seqprob(w, tn);
-  cascadelength(w, tn);
-  cascadefrequency(w, tn);
+  cascadestats(w, tn);
 
 
 

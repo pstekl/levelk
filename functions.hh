@@ -336,6 +336,12 @@ void freqcas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector
     return;
 
 
+  double pseq=1.;
+  for(int j=0; j<ct.size(); ++j){
+    pseq *= ct[j];
+  }
+
+
   //the first two values are always no cascade
   for(int i=2; i < ct.size(); ++i){
 
@@ -346,14 +352,7 @@ void freqcas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector
       }
       if(len > 0){
 
-        double tmp=1.;
-        // for(int j=0; j<i+len-1; ++j){
-        //     tmp *= ct[j];
-        // }
-        for(int j=0; j<ct.size(); ++j){
-            tmp *= ct[j];
-        }
-        res[k][len-1] += tmp;  //weighted frequency
+        res[k][len-1] += pseq;  //weighted frequency
         //res[k][len-1] += 1; //absolute frequency
         i += len-1;
         //std::cout<<"k "<<k<<" len  "<<len<<"res[k][len-1]   "<<res[k][len-1]<<std::endl;
@@ -381,6 +380,13 @@ void lencas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector<
     return;
 
 
+  double pseq=1.;
+
+  for(int j=0; j<ct.size(); ++j){
+    pseq *= ct[j];
+  }
+
+
   //the first two values are always no cascade
   for(int i=2; i < ct.size(); ++i){
 
@@ -391,14 +397,8 @@ void lencas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector<
       }
       if(len > 0){
 
-        double tmp=1.;
-        // for(int j=0; j<i+len-1; ++j){
-        //     tmp *= ct[j];
-        // }
-        for(int j=0; j<ct.size(); ++j){
-            tmp *= ct[j];
-        }
-        res[k][len-1] += tmp*len;  //weighted len
+
+        res[k][len-1] += pseq*len;  //weighted len
         //res[k][len-1] += len; //absolute length
         i += len-1;
         //std::cout<<"k "<<k<<" len  "<<len<<"res[k][len-1]   "<<res[k][len-1]<<std::endl;
@@ -690,75 +690,3 @@ void output(levelkworld<T>& w, int tn, std::vector<std::vector<double>>& pt){
   output.close();
 
 }
-
-
-
-
-
-
-
-
-// //compute probability of sequence
-// template <typename T>
-// T seqprob(boost::dynamic_bitset<>& x, T q, levelkworld<T> lkw){
-//   T res=1.;
-
-//   for(int i=0; i<x.size(); ++i){
-//   int l2c=-1;
-//   int l3c=-1;
-//     //create copy of bitset up to bit i
-//     boost::dynamic_bitset<> y(i);
-//     for(int j=0; j<i; ++j){
-//       y[j] = x[j];
-//     }
-//     //check in which state the levelks would be at bit i
-//     //@param cascade =0 NC, 1 AC, 2 BC
-//     level2(y, 0, l2c);
-//     level3(y, 0, l3c);
-
-//     //std::cout<<"l2c: "<<l2c<<std::endl;
-//     //std::cout<<"l3c: "<<l3c<<std::endl;
-
-//     //both A cascade
-//     if(l2c==1 && l3c==1) {
-//       res *= lkw.p[1];
-//       continue;
-//     }
-//     //both B cascade
-//     if(l2c==2 && l3c==2) {
-//       res *= lkw.p[2];
-//       continue;
-//     }
-//     // l2 A, l3 nc
-//     if(l2c==1 && l3c==0) {
-//        res *= lkw.p[3];
-//        continue;
-//     }
-//     //l2B, l3 nc
-//     if(l2c==2 && l3c==0) {
-//       res *= lkw.p[4];
-//       continue;
-//     }
-//     //l3A, l2 nc
-//     if(l2c==0 && l3c==1) {
-//       res *= lkw.p[5];
-//       continue;
-//     }
-//     //l3B, l2nc
-//     if(l2c==0 && l3c==2) {
-//        res *= lkw.p[6];
-//        continue;
-//     }
-//     //no cascade
-//     if(l2c==0 && l3c==0) {
-//       res *= lkw.p[0];
-//       continue;
-//     }
-//     else{
-//       std::cout<<"ERROR: unspecified case in seq prob"<<std::endl;
-//     }
-
-//   }
-
-//   return res;
-// }
