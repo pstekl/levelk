@@ -110,7 +110,8 @@ int level2(boost::dynamic_bitset<> seq, int signal, int t, int& cascade){
   int A=0;
   int B=0;
   //just observe until t-1
-  for (boost::dynamic_bitset<>::size_type i = 0; i < t-1; ++i) {
+  //for (boost::dynamic_bitset<>::size_type i = 0; i < t-1; ++i) {
+    for (int i = 0; i < t-1; ++i) {
     if(seq[i] == 1) {
       A+=1;
     }
@@ -145,7 +146,8 @@ int level3(boost::dynamic_bitset<> seq, int signal, int t, int& cascade){
 
 
   //just observe until t-1
-  for (boost::dynamic_bitset<>::size_type i = 0; i < t-1; ++i) {
+  //for (boost::dynamic_bitset<>::size_type i = 0; i < t-1; ++i) {
+  for (int i = 0; i < t-1; ++i) {
 
     //check for level2 cascade
     if(std::abs(A-B)>1) {

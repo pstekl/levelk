@@ -2,10 +2,12 @@ cmake_minimum_required (VERSION 2.6)
 
 set(CMAKE_C_COMPILER "clang")
 set(CMAKE_CXX_COMPILER "clang++")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
 
 project (levelk)
 add_executable(levelk levelk.cc)
 
+#set_property(levelk main APPEND_STRING PROPERTY COMPILE_FLAGS -Wall )
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)

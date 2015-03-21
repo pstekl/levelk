@@ -126,8 +126,8 @@ int main() {
   //read ini file
   boost::property_tree::ptree pt;
   boost::property_tree::ini_parser::read_ini("../config.ini", pt);
-  size_t t0 = pt.get<double>("levelkworld.t0");
-  size_t tn = pt.get<double>("levelkworld.tn");
+  int t0 = pt.get<int>("levelkworld.t0");
+  int tn = pt.get<int>("levelkworld.tn");
 
   //create lvl k world
   levelkworld<double> w(pt.get<double>("levelkworld.lvl0ratio"), pt.get<double>("levelkworld.lvl1ratio"),
