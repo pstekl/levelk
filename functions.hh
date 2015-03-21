@@ -235,11 +235,18 @@ void tab2(levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct,
 
 //frequency of cascades
 template <typename T>
-void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<int>& res){
+void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<double>& res){
 
   //cascades can only emerge if size > 2
   if(ct.size() < 3)
     return;
+
+
+  double pseq=1.;
+  for(int j=0; j<ct.size(); ++j){
+    pseq *= ct[j];
+  }
+
 
   int tmp=  -1;// last value in ct 0 A 1 B , -1 anything else
   int lastcas= -1;  //-1 unset or no cascade, 0 A cascade 1 B cascade
@@ -255,9 +262,11 @@ void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<int>
       }
       if(lastcas == 0) { //switch over A to A cascade
         res[0] += 1;
+        res[4] += pseq;
       }
       if(lastcas == 1) { //switch over B to A cascade
         res[1] += 1;
+        res[5] += pseq;
       }
       lastcas = 0;
       tmp = 0;
@@ -273,9 +282,11 @@ void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<int>
       }
       if(lastcas == 0) { //switch over A to B cascade
         res[2] += 1;
+        res[6] += pseq;
       }
       if(lastcas == 1) { //switch over B to B cascade
         res[3] += 1;
+        res[7] += pseq;
       }
       lastcas = 1;
       tmp = 1;
@@ -293,7 +304,7 @@ void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<int>
 
 //output
 template <typename T>
-void outputsw(levelkworld<T>& w, int tn, std::string filename, std::vector<int>& pt){
+void outputsw(levelkworld<T>& w, int tn, std::string filename, std::vector<T>& pt){
 
 
   std::ofstream output;
@@ -310,9 +321,9 @@ void outputsw(levelkworld<T>& w, int tn, std::string filename, std::vector<int>&
 
   output <<"Switch over:";
   output << "\n";
-  for(int j=0; j<pt.size(); ++j){
+  for(int j=0; j<4; ++j){
     output<<rows[j];
-    output<<","<<pt[j];
+    output<<","<<pt[j]<<","<<pt[j+4];
     output<<"\n";
   }
 

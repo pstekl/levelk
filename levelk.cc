@@ -23,7 +23,7 @@ void cascadestats(levelkworld<T> w, int tn){
   //freq
   std::vector<std::vector<double>> fcas(9, std::vector<double>(tn,0));
   //freq switch over
-  std::vector<int> fsw(4,0);
+  std::vector<double> fsw(8,0);
 
 
   //create sequences
