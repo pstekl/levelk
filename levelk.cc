@@ -16,7 +16,7 @@
 
 
 template <typename T>
-void cascadestats(levelkworld<T> w, int tn){
+void cascadestats(levelkworld<T> w, size_t tn){
 
   //length
   std::vector<std::vector<double>> lcas(9, std::vector<double>(tn,0));
@@ -27,7 +27,7 @@ void cascadestats(levelkworld<T> w, int tn){
 
 
   //create sequences
-  for(unsigned long j=0; j < (1<<(tn)); ++j){
+  for(size_t j=0; j < (1<<(tn)); ++j){
 
     boost::dynamic_bitset<> x(tn, j);
     std::vector<double> ct(tn,0.);
@@ -48,17 +48,17 @@ void cascadestats(levelkworld<T> w, int tn){
 
   std::vector<std::vector<double>> freq(9, std::vector<double>(1,0.));
 
-  for(int i=0; i<tn; ++i){
-    for(int j=0; j<9; ++j){
+  for(size_t i=0; i<tn; ++i){
+    for(size_t j=0; j<9; ++j){
       freq[j][0] += fcas[j][i];
     }
   }
 
-  outputlcas(w, tn, "freqcascades.csv", freq);
+  outputlcas(tn, "freqcascades.csv", freq);
 
   //output lcas
-  outputlcas(w, tn, "lencascades.csv", lcas);
-  outputsw(w, tn, "switchover.csv", fsw);
+  outputlcas(tn, "lencascades.csv", lcas);
+  outputsw("switchover.csv", fsw);
 
   return ;
 }
@@ -71,15 +71,15 @@ void cascadestats(levelkworld<T> w, int tn){
 //calculate and output probability of sequence,
 // efficiency and public belief
 template <typename T>
-void seqprob(levelkworld<T> w, int tn){
+void seqprob(levelkworld<T> w, size_t tn){
 
 
   //probabilities for the 9 cases + 1 chksum + 1 efficiency +1 public belief
   std::vector<std::vector<double>> pt(12, std::vector<double>(tn,0.));
 
   //create sequences
-  for(unsigned long i=0; i < tn ; ++i) {
-    for(unsigned long j=0; j < (1<<(i+1)); ++j){
+  for(size_t i=0; i < tn ; ++i) {
+    for(size_t j=0; j < (1<<(i+1)); ++j){
 
       boost::dynamic_bitset<> x(i+1, j);
       std::vector<double> ct(i+1,0.);
@@ -92,9 +92,9 @@ void seqprob(levelkworld<T> w, int tn){
 
 
       std::vector<double> tab2res(9,0.);
-      tab2(w,x,ct,i,tab2res);
+      tab2(w,ct,i,tab2res);
 
-      for(int k=0; k<9; ++k){
+      for(size_t k=0; k<9; ++k){
         pt[k][i] += tab2res[k];
         pt[9][i] += pt[k][i];
       }
@@ -102,7 +102,7 @@ void seqprob(levelkworld<T> w, int tn){
     }
     //chk sum
     pt[9][i] = 0.;
-    for(int k=0; k<9; ++k)
+    for(size_t k=0; k<9; ++k)
       pt[9][i] += pt[k][i];
   }
 
@@ -126,8 +126,8 @@ int main() {
   //read ini file
   boost::property_tree::ptree pt;
   boost::property_tree::ini_parser::read_ini("../config.ini", pt);
-  int t0 = pt.get<int>("levelkworld.t0");
-  int tn = pt.get<int>("levelkworld.tn");
+  size_t t0 = pt.get<size_t>("levelkworld.t0");
+  size_t tn = pt.get<size_t>("levelkworld.tn");
 
   //create lvl k world
   levelkworld<double> w(pt.get<double>("levelkworld.lvl0ratio"), pt.get<double>("levelkworld.lvl1ratio"),

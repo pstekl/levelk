@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 set(CMAKE_C_COMPILER "clang")
 set(CMAKE_CXX_COMPILER "clang++")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything -Wall -Wno-long-long -pedantic")
 
 project (levelk)
 add_executable(levelk levelk.cc)

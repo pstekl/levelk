@@ -106,12 +106,12 @@ public:
 
 //detect cascade
 //@param cascade =0 NC, 1 AC, 2 BC
-int level2(boost::dynamic_bitset<> seq, int signal, int t, int& cascade){
-  int A=0;
-  int B=0;
+size_t level2(boost::dynamic_bitset<> seq, size_t signal, size_t t, int& cascade){
+  size_t A=0;
+  size_t B=0;
   //just observe until t-1
   //for (boost::dynamic_bitset<>::size_type i = 0; i < t-1; ++i) {
-    for (int i = 0; i < t-1; ++i) {
+    for (size_t i = 0; i < t-1; ++i) {
     if(seq[i] == 1) {
       A+=1;
     }
@@ -138,16 +138,16 @@ int level2(boost::dynamic_bitset<> seq, int signal, int t, int& cascade){
 
 //detect cascade and detect fake cascade
 //@param cascade =0 NC, 1 AC, 2 BC
-int level3(boost::dynamic_bitset<> seq, int signal, int t, int& cascade){
-  int A=0;
-  int B=0;
-  int level3A=0;
-  int level3B=0;
+size_t level3(boost::dynamic_bitset<> seq, size_t signal, size_t t, int& cascade){
+  size_t A=0;
+  size_t B=0;
+  size_t level3A=0;
+  size_t level3B=0;
 
 
   //just observe until t-1
   //for (boost::dynamic_bitset<>::size_type i = 0; i < t-1; ++i) {
-  for (int i = 0; i < t-1; ++i) {
+  for (size_t i = 0; i < t-1; ++i) {
 
     //check for level2 cascade
     if(std::abs(A-B)>1) {
@@ -205,18 +205,18 @@ int level3(boost::dynamic_bitset<> seq, int signal, int t, int& cascade){
 
 
 template <typename T>
-void tab2(levelkworld<T> w, boost::dynamic_bitset<>& x, std::vector<double>& ct, int i, std::vector<double>& res){
+void tab2(levelkworld<T> w, std::vector<double>& ct, size_t i, std::vector<double>& res){
 
   double tmp=1.;
   //check for all 9 cases
-  for(int k=0; k<9; ++k) {
+  for(size_t k=0; k<9; ++k) {
     if( (ct[i] == w.p[k]) || (ct[i] == 1.-w.p[k]) ) {
-      for(int j=0; j<i+1; ++j){
+      for(size_t j=0; j<i+1; ++j){
         tmp *= ct[j];
       }
       res[k] = tmp;
       //speed up computation, because these others results must be zero
-      for(int l=k+1; l<9; ++l){
+      for(size_t l=k+1; l<9; ++l){
         res[l] = 0.;
       }
       break;
@@ -245,7 +245,7 @@ void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<doub
 
 
   double pseq=1.;
-  for(int j=0; j<ct.size(); ++j){
+  for(size_t j=0; j<ct.size(); ++j){
     pseq *= ct[j];
   }
 
@@ -253,7 +253,7 @@ void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<doub
   int tmp=  -1;// last value in ct 0 A 1 B , -1 anything else
   int lastcas= -1;  //-1 unset or no cascade, 0 A cascade 1 B cascade
   //the first two values are always no cascade
-  for(int i=2; i < ct.size(); ++i){
+  for(size_t i=2; i < ct.size(); ++i){
 
     //A cascade
     if(  ((ct[i] == w.p[1]) || (ct[i] == 1. - w.p[1] )) ) {
@@ -306,7 +306,7 @@ void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<doub
 
 //output
 template <typename T>
-void outputsw(levelkworld<T>& w, int tn, std::string filename, std::vector<T>& pt){
+void outputsw(std::string filename, std::vector<T>& pt){
 
 
   std::ofstream output;
@@ -323,7 +323,7 @@ void outputsw(levelkworld<T>& w, int tn, std::string filename, std::vector<T>& p
 
   output <<"Switch over:";
   output << "\n";
-  for(int j=0; j<4; ++j){
+  for(size_t j=0; j<4; ++j){
     output<<rows[j];
     output<<","<<pt[j]<<","<<pt[j+4];
     output<<"\n";
@@ -350,17 +350,17 @@ void freqcas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector
 
 
   double pseq=1.;
-  for(int j=0; j<ct.size(); ++j){
+  for(size_t j=0; j<ct.size(); ++j){
     pseq *= ct[j];
   }
 
 
   //the first two values are always no cascade
-  for(int i=2; i < ct.size(); ++i){
+  for(size_t i=2; i < ct.size(); ++i){
 
     //check for all 9 cases
-    for(int k=0; k<9; ++k) {
-      int len=0;
+    for(size_t k=0; k<9; ++k) {
+      size_t len=0;
       for( ; ( len<ct.size() && ( (ct[i+len] == w.p[k]) || (ct[i+len] == 1. - w.p[k] ))  )   ; ++len ){
       }
       if(len > 0){
@@ -395,17 +395,17 @@ void lencas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector<
 
   double pseq=1.;
 
-  for(int j=0; j<ct.size(); ++j){
+  for(size_t j=0; j<ct.size(); ++j){
     pseq *= ct[j];
   }
 
 
   //the first two values are always no cascade
-  for(int i=2; i < ct.size(); ++i){
+  for(size_t i=2; i < ct.size(); ++i){
 
     //check for all 9 cases
-    for(int k=0; k<9; ++k) {
-      int len=0;
+    for(size_t k=0; k<9; ++k) {
+      size_t len=0;
       for( ; ( len<ct.size() && ( (ct[i+len] == w.p[k]) || (ct[i+len] == 1. - w.p[k] ))  )   ; ++len ){
       }
       if(len > 0){
@@ -426,8 +426,7 @@ void lencas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector<
 
 
 //output
-template <typename T>
-void outputlcas(levelkworld<T>& w, int tn, std::string filename, std::vector<std::vector<double>>& pt){
+void outputlcas(size_t tn, std::string filename, std::vector<std::vector<double>>& pt){
 
 
   std::ofstream output;
@@ -438,7 +437,7 @@ void outputlcas(levelkworld<T>& w, int tn, std::string filename, std::vector<std
   // //level k world parameters
   // std::vector<std::string> lkwrows{"l0ratio", "l1ratio", "l2ratio", "l3ratio"};
   // output << "level k world parameters\n";
-  // for(int i=0; i<4; ++i){
+  // for(size_t i=0; i<4; ++i){
   //   output << lkwrows[i]<<","<<w.lkr[i] <<"\n";
   // }
   // output <<"signal,"<<w.q<<"\n\n";
@@ -446,30 +445,30 @@ void outputlcas(levelkworld<T>& w, int tn, std::string filename, std::vector<std
   std::vector<std::string> rows{"NC", "l2Al3A", "l2Bl3B", "l2Al3NC", "l2Bl3NC", "l3Al2NC", "l3Bl2NC", "l2Al3B", "l2Bl3A"};
 
   // output<<"P(at|w=A)";
-  // for(int i=0; i<9; ++i){
+  // for(size_t i=0; i<9; ++i){
   //   output<<","<<rows[i];
   // }
   // output<<std::endl;
   // output<<"A";
-  // for(int i=0; i<9; ++i){
+  // for(size_t i=0; i<9; ++i){
   //   output<<","<<w.p[i];
   // }
   // output<<std::endl;
   // output<<"B";
-  // for(int i=0; i<9; ++i){
+  // for(size_t i=0; i<9; ++i){
   //   output<<","<<1.- w.p[i];
   // }
   // output<<std::endl;
   output<<std::endl;
 
   output <<"length";
-  for(int i=0; i<tn;++i) {
+  for(size_t i=0; i<tn;++i) {
     output<<","<<i+1;
   }
   output << "\n";
-  for(int j=0; j<pt.size(); ++j){
+  for(size_t j=0; j<pt.size(); ++j){
     output<<rows[j];
-    for(int i=0; i < pt[j].size(); ++i){
+    for(size_t i=0; i < pt[j].size(); ++i){
       output<<","<<pt[j][i];
     }
     output<<"\n";
@@ -495,7 +494,7 @@ T coltab(boost::dynamic_bitset<>& x, levelkworld<T> w, std::vector<double>& res)
 
 
 
-  for(int i=0; i<x.size(); ++i){
+  for(size_t i=0; i<x.size(); ++i){
     int l2c=-1;
     int l3c=-1;
 
@@ -627,7 +626,7 @@ T coltab(boost::dynamic_bitset<>& x, levelkworld<T> w, std::vector<double>& res)
 //calculate efficiency
 template <typename T>
 void efficiency(levelkworld<T>& w, std::vector<std::vector<double>>& pt) {
-  for(int i=0; i<pt[0].size(); ++i){
+  for(size_t i=0; i<pt[0].size(); ++i){
     pt[10][i] = 0.5*w.lkr[0] + w.q * w.lkr[1] + w.lkr[2] * (  w.q*( pt[0][i] + pt[5][i] + pt[6][i] ) + pt[4][i] + pt[1][i] + pt[7][i]  )
       + w.lkr[3] * ( w.q*( pt[0][i] + pt[3][i] + pt[4][i] ) + pt[5][i] + pt[1][i] + pt[8][i]     );
   }
@@ -640,7 +639,7 @@ void publicbelief(levelkworld<T>& w, std::vector<std::vector<double>>& pt) {
   double pbcr = 0.5*w.lkr[0] + w.q * w.lkr[1] + w.lkr[2] + w.lkr[3];
   double pbl2cl3nc = 0.5*w.lkr[0] + w.q * (w.lkr[1] + w.lkr[3]) + w.lkr[2];
   double pbl2ncl3c = 0.5*w.lkr[0] + w.q * (w.lkr[1] + w.lkr[2]) + w.lkr[3];
-  for(int i=0; i<pt[0].size(); ++i){
+  for(size_t i=0; i<pt[0].size(); ++i){
     pt[11][i] = pbnc*pt[0][i] + pbcr*( pt[1][i] + pt[2][i] + pt[7][i] + pt[8][i] )
       + pbl2cl3nc * ( pt[3][i] + pt[4][i]  )
       + pbl2ncl3c * ( pt[5][i] + pt[6][i]   );
@@ -651,7 +650,7 @@ void publicbelief(levelkworld<T>& w, std::vector<std::vector<double>>& pt) {
 
 //output
 template <typename T>
-void output(levelkworld<T>& w, int tn, std::vector<std::vector<double>>& pt){
+void output(levelkworld<T>& w, size_t tn, std::vector<std::vector<double>>& pt){
 
 
   std::ofstream output;
@@ -662,7 +661,7 @@ void output(levelkworld<T>& w, int tn, std::vector<std::vector<double>>& pt){
   //level k world parameters
   std::vector<std::string> lkwrows{"l0ratio", "l1ratio", "l2ratio", "l3ratio"};
   output << "level k world parameters\n";
-  for(int i=0; i<4; ++i){
+  for(size_t i=0; i<4; ++i){
     output << lkwrows[i]<<","<<w.lkr[i] <<"\n";
   }
   output <<"signal,"<<w.q<<"\n\n";
@@ -671,30 +670,30 @@ void output(levelkworld<T>& w, int tn, std::vector<std::vector<double>>& pt){
       "CHKSUM", "efficiency", "publicbelief"};
 
   output<<"P(at|w=A)";
-  for(int i=0; i<9; ++i){
+  for(size_t i=0; i<9; ++i){
     output<<","<<rows[i];
   }
   output<<std::endl;
   output<<"A";
-  for(int i=0; i<9; ++i){
+  for(size_t i=0; i<9; ++i){
     output<<","<<w.p[i];
   }
   output<<std::endl;
   output<<"B";
-  for(int i=0; i<9; ++i){
+  for(size_t i=0; i<9; ++i){
     output<<","<<1.- w.p[i];
   }
   output<<std::endl;
   output<<std::endl;
 
   output <<"t";
-  for(int i=0; i<tn;++i) {
+  for(size_t i=0; i<tn;++i) {
     output<<","<<i+1;
   }
   output << "\n";
-  for(int j=0; j<pt.size(); ++j){
+  for(size_t j=0; j<pt.size(); ++j){
     output<<rows[j];
-    for(int i=0; i < pt[j].size(); ++i){
+    for(size_t i=0; i < pt[j].size(); ++i){
       output<<","<<pt[j][i];
     }
     output<<"\n";
