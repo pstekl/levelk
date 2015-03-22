@@ -141,7 +141,7 @@ int main() {
 
 
   seqprob(w, tn);
-  //cascadestats(w, tn);
+  cascadestats(w, tn);
 
 
 

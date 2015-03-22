@@ -365,16 +365,16 @@ void freqcas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector
 
 
   //the first two values are always no cascade
-  for(size_t i=2; i < ct.size(); ++i){
+  for(int i=2; static_cast<size_t>(i) < ct.size(); ++i){
 
     //check for all 9 cases
     for(size_t k=0; k<9; ++k) {
       int len=0;
-      for( ; ( len<ct.size() && ( (ct[i+len] == k) || (ct[i+len] == k+9 ))  )   ; ++len ){
+      for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) || (ct[static_cast<size_t>(i+len)] == k+9 ))  )   ; ++len ){
       }
       if(len > 0){
 
-        res[k][len-1] += pseq;  //weighted frequency
+        res[k][static_cast<size_t>(len-1)] += pseq;  //weighted frequency
         //res[k][len-1] += 1; //absolute frequency
         i += len-1;
         //std::cout<<"k "<<k<<" len  "<<len<<"res[k][len-1]   "<<res[k][len-1]<<std::endl;
@@ -408,17 +408,17 @@ void lencas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<
 
 
   //the first two values are always no cascade
-  for(size_t i=2; i < ct.size(); ++i){
+  for(int i=2; static_cast<size_t>(i) < ct.size(); ++i){
 
     //check for all 9 cases
     for(size_t k=0; k<9; ++k) {
       int len=0;
-      for( ; ( len<ct.size() && ( (ct[i+len] == k) || (ct[i+len] == k+9 ))  )   ; ++len ){
+      for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) || (ct[static_cast<size_t>(i+len)] == k+9 ))  )   ; ++len ){
       }
       if(len > 0){
 
 
-        res[k][len-1] += pseq*len;  //weighted len
+        res[k][static_cast<size_t>(len-1)] += pseq*len;  //weighted len
         //res[k][len-1] += len; //absolute length
         i += len-1;
         //std::cout<<"k "<<k<<" len  "<<len<<"res[k][len-1]   "<<res[k][len-1]<<std::endl;
