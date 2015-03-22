@@ -1,6 +1,10 @@
 
 typedef std::numeric_limits< double > dbl;
 
+
+enum cases { Anc, Al2Al3A, Al2Bl3B, Al2Al3nc, Al2Bl3nc, Al2ncl3A, Al2ncl3B, Al2Al3B, Al2Bl3A,
+             Bnc, Bl2Al3A, Bl2Bl3B, Bl2Al3nc, Bl2Bl3nc, Bl2ncl3A, Bl2ncl3B, Bl2Al3B, Bl2Bl3A};
+
 //A is 1
 //B is 0
 template<typename T>
@@ -16,7 +20,7 @@ public:
   T q;        //prob q that signal is correct
   //calculate probability p that A comes for each situation
   //in the same situation probability for B is of course 1-p
-  T p[9];
+  T p[18];
   //No cascade
   T nc() {
     return 0.5*lkr[0] + q*(lkr[1]+lkr[2]+lkr[3]);
@@ -59,15 +63,17 @@ public:
 
   //update probabilities
   void updatep() {
-    p[0] = nc();
-    p[1] = l2l3A();
-    p[2] = l2l3B();
-    p[3] = l2A();
-    p[4] = l2B();
-    p[5] = l3A();
-    p[6] = l3B();
-    p[7] = l2Al3B();
-    p[8] = l2Bl3A();
+    p[Anc] = nc();
+    p[Al2Al3A] = l2l3A();
+    p[Al2Bl3B] = l2l3B();
+    p[Al2Al3nc] = l2A();
+    p[Al2Bl3nc] = l2B();
+    p[Al2ncl3A] = l3A();
+    p[Al2ncl3B] = l3B();
+    p[Al2Al3B] = l2Al3B();
+    p[Al2Bl3A] = l2Bl3A();
+    for(size_t i=0; i<9; ++i)
+      p[i+9] = 1. - p[i];
 
   }
   //print probabilities for A
@@ -107,11 +113,11 @@ public:
 //detect cascade
 //@param cascade =0 NC, 1 AC, 2 BC
 size_t level2(boost::dynamic_bitset<> seq, size_t signal, size_t t, int& cascade){
-  size_t A=0;
-  size_t B=0;
+  int A=0;
+  int B=0;
   //just observe until t-1
   //for (boost::dynamic_bitset<>::size_type i = 0; i < t-1; ++i) {
-    for (size_t i = 0; i < t-1; ++i) {
+    for (size_t i = 0; i < t; ++i) {
     if(seq[i] == 1) {
       A+=1;
     }
@@ -139,15 +145,15 @@ size_t level2(boost::dynamic_bitset<> seq, size_t signal, size_t t, int& cascade
 //detect cascade and detect fake cascade
 //@param cascade =0 NC, 1 AC, 2 BC
 size_t level3(boost::dynamic_bitset<> seq, size_t signal, size_t t, int& cascade){
-  size_t A=0;
-  size_t B=0;
-  size_t level3A=0;
-  size_t level3B=0;
+  int A=0;
+  int B=0;
+  int level3A=0;
+  int level3B=0;
 
 
   //just observe until t-1
   //for (boost::dynamic_bitset<>::size_type i = 0; i < t-1; ++i) {
-  for (size_t i = 0; i < t-1; ++i) {
+  for (size_t i = 0; i < t; ++i) {
 
     //check for level2 cascade
     if(std::abs(A-B)>1) {
@@ -204,15 +210,17 @@ size_t level3(boost::dynamic_bitset<> seq, size_t signal, size_t t, int& cascade
 }
 
 
+
+
 template <typename T>
-void tab2(levelkworld<T> w, std::vector<double>& ct, size_t i, std::vector<double>& res){
+void tab2(levelkworld<T> w, std::vector<size_t>& ct, size_t i, std::vector<double>& res){
 
   double tmp=1.;
-  //check for all 9 cases
+  //check for all 9 cases, respectively 18 (if one counts B cases too)
   for(size_t k=0; k<9; ++k) {
-    if( (ct[i] == w.p[k]) || (ct[i] == 1.-w.p[k]) ) {
+    if( (ct[i] == k) || (ct[i] == k+9) ) {
       for(size_t j=0; j<i+1; ++j){
-        tmp *= ct[j];
+        tmp *= w.p[ct[j]];
       }
       res[k] = tmp;
       //speed up computation, because these others results must be zero
@@ -234,10 +242,9 @@ void tab2(levelkworld<T> w, std::vector<double>& ct, size_t i, std::vector<doubl
 
 
 
-
 //frequency of cascades
 template <typename T>
-void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<double>& res){
+void freqswitchover(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<double>& res){
 
   //cascades can only emerge if size > 2
   if(ct.size() < 3)
@@ -246,7 +253,7 @@ void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<doub
 
   double pseq=1.;
   for(size_t j=0; j<ct.size(); ++j){
-    pseq *= ct[j];
+    pseq *= w.p[ct[j]];
   }
 
 
@@ -256,9 +263,10 @@ void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<doub
   for(size_t i=2; i < ct.size(); ++i){
 
     //A cascade
-    if(  ((ct[i] == w.p[1]) || (ct[i] == 1. - w.p[1] )) ) {
+    if((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc) ||
+       (ct[i] == Bl2Al3A) || (ct[i] == Bl2Al3B ) || (ct[i] == Bl2Al3nc) ) {
 
-      // tmp contains informaiton about cascade of bit before
+      // tmp contains information about cascade of bit before
       if ( tmp == 0 )  {//already in A cascade=> do nothing
         continue;
       }
@@ -276,7 +284,8 @@ void freqswitchover(levelkworld<T> w, std::vector<double>& ct,  std::vector<doub
     }
 
     //B cascade
-    if(  ((ct[i] == w.p[2]) || (ct[i] == 1. - w.p[2] )) ) {
+    if((ct[i] == Al2Bl3A) || (ct[i] == Al2Bl3B ) || (ct[i] == Al2Bl3nc) ||
+       (ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc) ) {
 
       // tmp contains informaiton about cascade of bit before
       if ( tmp == 1 )  {//already in B cascade=> do nothing
@@ -342,7 +351,7 @@ void outputsw(std::string filename, std::vector<T>& pt){
 
 //frequency of cascades
 template <typename T>
-void freqcas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector<double>>& res){
+void freqcas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<double> >& res){
 
   //cascades can only emerge if size > 2
   if(ct.size() < 3)
@@ -351,7 +360,7 @@ void freqcas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector
 
   double pseq=1.;
   for(size_t j=0; j<ct.size(); ++j){
-    pseq *= ct[j];
+    pseq *= w.p[ct[j]];
   }
 
 
@@ -360,8 +369,8 @@ void freqcas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector
 
     //check for all 9 cases
     for(size_t k=0; k<9; ++k) {
-      size_t len=0;
-      for( ; ( len<ct.size() && ( (ct[i+len] == w.p[k]) || (ct[i+len] == 1. - w.p[k] ))  )   ; ++len ){
+      int len=0;
+      for( ; ( len<ct.size() && ( (ct[i+len] == k) || (ct[i+len] == k+9 ))  )   ; ++len ){
       }
       if(len > 0){
 
@@ -382,11 +391,9 @@ void freqcas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector
 
 
 
-
-
 //length of cascades
 template <typename T>
-void lencas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector<double>>& res){
+void lencas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<double> >& res){
 
   //cascades can only emerge if size > 2
   if(ct.size() < 3)
@@ -396,7 +403,7 @@ void lencas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector<
   double pseq=1.;
 
   for(size_t j=0; j<ct.size(); ++j){
-    pseq *= ct[j];
+    pseq *= w.p[ct[j]];
   }
 
 
@@ -405,8 +412,8 @@ void lencas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector<
 
     //check for all 9 cases
     for(size_t k=0; k<9; ++k) {
-      size_t len=0;
-      for( ; ( len<ct.size() && ( (ct[i+len] == w.p[k]) || (ct[i+len] == 1. - w.p[k] ))  )   ; ++len ){
+      int len=0;
+      for( ; ( len<ct.size() && ( (ct[i+len] == k) || (ct[i+len] == k+9 ))  )   ; ++len ){
       }
       if(len > 0){
 
@@ -425,8 +432,10 @@ void lencas(levelkworld<T> w, std::vector<double>& ct,  std::vector<std::vector<
 }
 
 
+
+
 //output
-void outputlcas(size_t tn, std::string filename, std::vector<std::vector<double>>& pt){
+void outputlcas(size_t tn, std::string filename, std::vector<std::vector<double> >& pt){
 
 
   std::ofstream output;
@@ -484,15 +493,18 @@ void outputlcas(size_t tn, std::string filename, std::vector<std::vector<double>
 
 
 
-
-
-
-
 //compute tab1 coloured table
-template <typename T>
-T coltab(boost::dynamic_bitset<>& x, levelkworld<T> w, std::vector<double>& res){
+size_t coltab(boost::dynamic_bitset<>& x, std::vector<size_t>& res){
 
-
+  // p[Anc] = nc();
+  //   p[Al2Al3A] = l2l3A();
+  //   p[Al2Bl3B] = l2l3B();
+  //   p[Al2Al3nc] = l2A();
+  //   p[Al2Bl3nc] = l2B();
+  //   p[Al2ncl3A] = l3A();
+  //   p[Al2ncl3B] = l3B();
+  //   p[Al2Al3B] = l2Al3B();
+  //   p[Al2Bl3A] = l2Bl3A();
 
   for(size_t i=0; i<x.size(); ++i){
     int l2c=-1;
@@ -500,115 +512,109 @@ T coltab(boost::dynamic_bitset<>& x, levelkworld<T> w, std::vector<double>& res)
 
     //check in which state the levelks would be at bit i
     //@param cascade =0 NC, 1 AC, 2 BC
-    level2(x, 0, i+1, l2c);
-    level3(x, 0, i+1, l3c);
-    //std::cout<<"l2c: "<<l2c<<std::endl;
-    //std::cout<<"l3c: "<<l3c<<std::endl;
+    level2(x, 0, i, l2c);
+    level3(x, 0, i, l3c);
+    // std::cout<<"l2c: "<<l2c<<std::endl;
+    // std::cout<<"l3c: "<<l3c<<std::endl;
+
+    //no cascade
+    if(l2c==0 && l3c==0) {
+      // A
+      if(x[i] == 1) {
+        res[i] = Anc;
+      }
+      else{ // B
+        res[i] = Bnc;
+      }
+      continue;
+    }
+
     //both A cascade
     if(l2c==1 && l3c==1) {
-      //res *= w.p[1];
-      // A push back prob for A
+      // A
       if(x[i] == 1) {
-        res[i] = w.p[1];
+        res[i] = Al2Al3A;
       }
-      else{ // B push back prob for B
-        res[i] = 1.- w.p[1];
+      else{ // B
+        res[i] = Bl2Al3A;
       }
       continue;
     }
     //both B cascade
     if(l2c==2 && l3c==2) {
-      //res *= w.p[2];
-      // A push back prob for A
+      // A
       if(x[i] == 1) {
-        res[i] = w.p[2];
+        res[i] = Al2Bl3B;
       }
-      else{ // B push back prob for B
-        res[i] = 1.- w.p[2];
+      else{ // B
+        res[i] = Bl2Bl3B;
       }
       continue;
     }
     // l2 A, l3 nc
     if(l2c==1 && l3c==0) {
-      //res *= w.p[3];
-      // A push back prob for A
+      // A
       if(x[i] == 1) {
-        res[i] = w.p[3];
+        res[i] = Al2Al3nc;
       }
-      else{ // B push back prob for B
-        res[i] = 1.- w.p[3];
+      else{ // B
+        res[i] = Bl2Al3nc;
       }
       continue;
     }
     //l2B, l3 nc
     if(l2c==2 && l3c==0) {
-      //res *= w.p[4];
-      // A push back prob for A
+      // A
       if(x[i] == 1) {
-        res[i] = w.p[4];
+        res[i] = Al2Bl3nc;
       }
-      else{ // B push back prob for B
-        res[i] = 1.- w.p[4];
+      else{ // B
+        res[i] = Bl2Bl3nc;
       }
       continue;
     }
     //l3A, l2 nc
     if(l2c==0 && l3c==1) {
-      //res *= w.p[5];
-      // A push back prob for A
+      // A
       if(x[i] == 1) {
-        res[i] = w.p[5];
+        res[i] = Al2ncl3A;
       }
-      else{ // B push back prob for B
-        res[i] = 1.- w.p[5];
+      else{ // B
+        res[i] = Bl2ncl3A;
       }
       continue;
     }
     //l3B, l2nc
     if(l2c==0 && l3c==2) {
-      //res *= w.p[6];
-      // A push back prob for A
+      // A
       if(x[i] == 1) {
-        res[i] = w.p[6];
+        res[i] = Al2ncl3B;
       }
-      else{ // B push back prob for B
-        res[i] = 1.- w.p[6];
+      else{ // B
+        res[i] = Bl2ncl3B;
       }
       continue;
     }
-    //no cascade
-    if(l2c==0 && l3c==0) {
-      //res *= w.p[0];
-      // A push back prob for A
-      if(x[i] == 1) {
-        res[i] = w.p[0];
-      }
-      else{ // B push back prob for B
-        res[i] = 1.- w.p[0];
-      }
-      continue;
-    }
+
     // l2A l3 B
     if(l2c==1 && l3c==2) {
-      //res *= w.p[0];
-      // A push back prob for A
+      // A
       if(x[i] == 1) {
-        res[i] = w.p[7];
+        res[i] = Al2Al3B;
       }
-      else{ // B push back prob for B
-        res[i] = 1.- w.p[7];
+      else{ // B
+        res[i] = Bl2Al3B;
       }
       continue;
     }
     // l2B l3 A
     if(l2c==2 && l3c==1) {
-      //res *= w.p[0];
-      // A push back prob for A
+      // A
       if(x[i] == 1) {
-        res[i] = w.p[8] ;
+        res[i] = Al2Bl3A;
       }
-      else{ // B push back prob for B
-        res[i] = 1.- w.p[8];
+      else{ // B
+        res[i] = Bl2Bl3A;
       }
       continue;
     }
@@ -623,9 +629,10 @@ T coltab(boost::dynamic_bitset<>& x, levelkworld<T> w, std::vector<double>& res)
 
 
 
+
 //calculate efficiency
 template <typename T>
-void efficiency(levelkworld<T>& w, std::vector<std::vector<double>>& pt) {
+void efficiency(levelkworld<T>& w, std::vector<std::vector<double> >& pt) {
   for(size_t i=0; i<pt[0].size(); ++i){
     pt[10][i] = 0.5*w.lkr[0] + w.q * w.lkr[1] + w.lkr[2] * (  w.q*( pt[0][i] + pt[5][i] + pt[6][i] ) + pt[4][i] + pt[1][i] + pt[7][i]  )
       + w.lkr[3] * ( w.q*( pt[0][i] + pt[3][i] + pt[4][i] ) + pt[5][i] + pt[1][i] + pt[8][i]     );
@@ -634,7 +641,7 @@ void efficiency(levelkworld<T>& w, std::vector<std::vector<double>>& pt) {
 
 //calculate public belief
 template <typename T>
-void publicbelief(levelkworld<T>& w, std::vector<std::vector<double>>& pt) {
+void publicbelief(levelkworld<T>& w, std::vector<std::vector<double> >& pt) {
   double pbnc = 0.5*w.lkr[0] + w.q * (w.lkr[1] + w.lkr[2] + w.lkr[3]);
   double pbcr = 0.5*w.lkr[0] + w.q * w.lkr[1] + w.lkr[2] + w.lkr[3];
   double pbl2cl3nc = 0.5*w.lkr[0] + w.q * (w.lkr[1] + w.lkr[3]) + w.lkr[2];
@@ -650,7 +657,7 @@ void publicbelief(levelkworld<T>& w, std::vector<std::vector<double>>& pt) {
 
 //output
 template <typename T>
-void output(levelkworld<T>& w, size_t tn, std::vector<std::vector<double>>& pt){
+void output(levelkworld<T>& w, size_t tn, std::vector<std::vector<double> >& pt){
 
 
   std::ofstream output;
@@ -680,8 +687,8 @@ void output(levelkworld<T>& w, size_t tn, std::vector<std::vector<double>>& pt){
   }
   output<<std::endl;
   output<<"B";
-  for(size_t i=0; i<9; ++i){
-    output<<","<<1.- w.p[i];
+  for(size_t i=9; i<18; ++i){
+    output<<","<<w.p[i];
   }
   output<<std::endl;
   output<<std::endl;

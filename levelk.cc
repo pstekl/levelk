@@ -15,13 +15,13 @@
 
 
 
-template <typename T>
-void cascadestats(levelkworld<T> w, size_t tn){
+
+void cascadestats(levelkworld<double> w, size_t tn){
 
   //length
-  std::vector<std::vector<double>> lcas(9, std::vector<double>(tn,0));
+  std::vector<std::vector<double> > lcas(9, std::vector<double>(tn,0));
   //freq
-  std::vector<std::vector<double>> fcas(9, std::vector<double>(tn,0));
+  std::vector<std::vector<double> > fcas(9, std::vector<double>(tn,0));
   //freq switch over
   std::vector<double> fsw(8,0);
 
@@ -30,13 +30,13 @@ void cascadestats(levelkworld<T> w, size_t tn){
   for(size_t j=0; j < (1<<(tn)); ++j){
 
     boost::dynamic_bitset<> x(tn, j);
-    std::vector<double> ct(tn,0.);
+    std::vector<size_t> ct(tn,0.);
 
     // for (boost::dynamic_bitset<>::size_type k = 0; k < x.size(); ++k)
     //   std::cout << x[k];
     // std::cout << "\n";
 
-    coltab(x, w, ct);
+    coltab(x, ct);
     lencas(w, ct, lcas);
     freqcas(w, ct, fcas);
     freqswitchover(w, ct, fsw);
@@ -46,7 +46,7 @@ void cascadestats(levelkworld<T> w, size_t tn){
     // std::cout<<std::endl;
   }
 
-  std::vector<std::vector<double>> freq(9, std::vector<double>(1,0.));
+  std::vector<std::vector<double> > freq(9, std::vector<double>(1,0.));
 
   for(size_t i=0; i<tn; ++i){
     for(size_t j=0; j<9; ++j){
@@ -75,20 +75,25 @@ void seqprob(levelkworld<T> w, size_t tn){
 
 
   //probabilities for the 9 cases + 1 chksum + 1 efficiency +1 public belief
-  std::vector<std::vector<double>> pt(12, std::vector<double>(tn,0.));
+  std::vector<std::vector<double> > pt(12, std::vector<double>(tn,0.));
 
   //create sequences
   for(size_t i=0; i < tn ; ++i) {
     for(size_t j=0; j < (1<<(i+1)); ++j){
 
       boost::dynamic_bitset<> x(i+1, j);
-      std::vector<double> ct(i+1,0.);
+      std::vector<size_t> ct(i+1,0.);
 
       // for (boost::dynamic_bitset<>::size_type k = 0; k < x.size(); ++k)
       //   std::cout << x[k];
       // std::cout << "\n";
 
-      coltab(x, w, ct);
+      coltab(x, ct);
+
+      // for (size_t k = 0; k < x.size(); ++k)
+      //   std::cout << w.p[ct[k]]<<", ";
+      // std::cout << "\n";
+
 
 
       std::vector<double> tab2res(9,0.);
@@ -136,7 +141,7 @@ int main() {
 
 
   seqprob(w, tn);
-  cascadestats(w, tn);
+  //cascadestats(w, tn);
 
 
 
