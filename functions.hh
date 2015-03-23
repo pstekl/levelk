@@ -370,7 +370,9 @@ void freqcas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector
     //check for all 9 cases
     for(size_t k=0; k<9; ++k) {
       int len=0;
-      for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) || (ct[static_cast<size_t>(i+len)] == k+9 ))  )   ; ++len ){
+      // for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) || (ct[static_cast<size_t>(i+len)] == k+9 ))  )   ; ++len ){
+      // }
+      for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) )  )   ; ++len ){
       }
       if(len > 0){
 
@@ -413,7 +415,9 @@ void lencas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<
     //check for all 9 cases
     for(size_t k=0; k<9; ++k) {
       int len=0;
-      for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) || (ct[static_cast<size_t>(i+len)] == k+9 ))  )   ; ++len ){
+      // for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) || (ct[static_cast<size_t>(i+len)] == k+9 ))  )   ; ++len ){
+      // }
+      for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) )  )   ; ++len ){
       }
       if(len > 0){
 
