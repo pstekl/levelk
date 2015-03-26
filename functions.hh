@@ -257,8 +257,9 @@ void freqswitchover(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<doub
   }
 
 
-  int tmp=  -1;// last value in ct 0 A 1 B , -1 anything else
+  int tmp=  -1;// last value in ct 0 A 1 B, -1 anything else
   int lastcas= -1;  //-1 unset or no cascade, 0 A cascade 1 B cascade
+  int plastcas= -1;  // cascade before lastcascade
   //the first two values are always no cascade
   for(size_t i=2; i < ct.size(); ++i){
 
@@ -279,7 +280,13 @@ void freqswitchover(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<doub
         res[5] += pseq;
       }
       lastcas = 0;
-      tmp = 0;
+
+      if((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc)) {
+        tmp = 0;
+      }
+      if((ct[i] == Bl2Al3A) || (ct[i] == Bl2Al3B ) || (ct[i] == Bl2Al3nc)){
+        tmp = 1;
+      }
       continue;
     }
 
@@ -301,6 +308,14 @@ void freqswitchover(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<doub
       }
       lastcas = 1;
       tmp = 1;
+
+      if ((ct[i] == Al2Bl3A) || (ct[i] == Al2Bl3B ) || (ct[i] == Al2Bl3nc)) {
+        tmp = 0;
+      }
+      if((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)){
+        tmp = 1;
+      }
+
       continue;
     }
     //anything else in ct[i] but A or B cascade
@@ -413,7 +428,7 @@ void lencas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<
   for(int i=2; static_cast<size_t>(i) < ct.size(); ++i){
 
     //check for all 9 cases
-    for(size_t k=0; k<9; ++k) {
+    for(size_t k=0; k<18; ++k) {
       int len=0;
       // for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) || (ct[static_cast<size_t>(i+len)] == k+9 ))  )   ; ++len ){
       // }
@@ -422,7 +437,7 @@ void lencas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<
       if(len > 0){
 
 
-        res[k][static_cast<size_t>(len-1)] += pseq*len;  //weighted len
+        res[k%9][static_cast<size_t>(len-1)] += pseq;  //weighted len
         //res[k][len-1] += len; //absolute length
         i += len-1;
         //std::cout<<"k "<<k<<" len  "<<len<<"res[k][len-1]   "<<res[k][len-1]<<std::endl;
@@ -633,15 +648,16 @@ size_t coltab(boost::dynamic_bitset<>& x, std::vector<size_t>& res){
 
 
 
-
 //calculate efficiency
 template <typename T>
 void efficiency(levelkworld<T>& w, std::vector<std::vector<double> >& pt) {
-  for(size_t i=0; i<pt[0].size(); ++i){
-    pt[10][i] = 0.5*w.lkr[0] + w.q * w.lkr[1] + w.lkr[2] * (  w.q*( pt[0][i] + pt[5][i] + pt[6][i] ) + pt[4][i] + pt[1][i] + pt[7][i]  )
-      + w.lkr[3] * ( w.q*( pt[0][i] + pt[3][i] + pt[4][i] ) + pt[5][i] + pt[1][i] + pt[8][i]     );
-  }
+	for (size_t i = 0; i<pt[0].size(); ++i) {
+		pt[10][i] = 0.5*w.lkr[0] + w.q * w.lkr[1] + w.lkr[2] * ( w.q*(pt[0][i] + pt[5][i] + pt[6][i]) + pt[3][i] + pt[1][i] + pt[7][i] )
+			+ w.lkr[3] * (w.q*(pt[0][i] + pt[3][i] + pt[4][i]) + pt[5][i] + pt[1][i] + pt[8][i]);
+	}
 }
+
+
 
 //calculate public belief
 template <typename T>
