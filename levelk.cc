@@ -19,9 +19,8 @@
 void cascadestats(levelkworld<double> w, size_t tn){
 
   //length
-  std::vector<std::vector<double> > lcas(9, std::vector<double>(tn,0));
-  //freq
-  std::vector<std::vector<double> > fcas(9, std::vector<double>(tn,0));
+  std::vector<std::vector<double> > lcas(18, std::vector<double>(tn,0));
+
   //freq switch over
   std::vector<double> fsw(8,0);
 
@@ -38,7 +37,6 @@ void cascadestats(levelkworld<double> w, size_t tn){
 
     coltab(x, ct);
     lencas(w, ct, lcas);
-    freqcas(w, ct, fcas);
     freqswitchover(w, ct, fsw);
 
     // for(int i=0; i<4; ++i)
@@ -46,15 +44,8 @@ void cascadestats(levelkworld<double> w, size_t tn){
     // std::cout<<std::endl;
   }
 
-  std::vector<std::vector<double> > freq(9, std::vector<double>(1,0.));
-
-  for(size_t i=0; i<tn; ++i){
-    for(size_t j=0; j<9; ++j){
-      freq[j][0] += fcas[j][i];
-    }
-  }
-
-  outputlcas(tn, "freqcascades.csv", freq);
+  // std::vector<std::vector<double> > freq(9, std::vector<double>(1,0.));
+  // outputlcas(tn, "freqcascades.csv", freq);
 
   //output lcas
   outputlcas(tn, "lencascades.csv", lcas);

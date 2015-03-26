@@ -5,6 +5,10 @@ typedef std::numeric_limits< double > dbl;
 enum cases { Anc, Al2Al3A, Al2Bl3B, Al2Al3nc, Al2Bl3nc, Al2ncl3A, Al2ncl3B, Al2Al3B, Al2Bl3A,
              Bnc, Bl2Al3A, Bl2Bl3B, Bl2Al3nc, Bl2Bl3nc, Bl2ncl3A, Bl2ncl3B, Bl2Al3B, Bl2Bl3A};
 
+
+l2Al3A Al2Al3nc Al2Al3B
+
+
 //A is 1
 //B is 0
 template<typename T>
@@ -361,53 +365,6 @@ void outputsw(std::string filename, std::vector<T>& pt){
 
 
 
-
-
-
-//frequency of cascades
-template <typename T>
-void freqcas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<double> >& res){
-
-  //cascades can only emerge if size > 2
-  if(ct.size() < 3)
-    return;
-
-
-  double pseq=1.;
-  for(size_t j=0; j<ct.size(); ++j){
-    pseq *= w.p[ct[j]];
-  }
-
-
-  //the first two values are always no cascade
-  for(int i=2; static_cast<size_t>(i) < ct.size(); ++i){
-
-    //check for all 9 cases
-    for(size_t k=0; k<9; ++k) {
-      int len=0;
-      // for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) || (ct[static_cast<size_t>(i+len)] == k+9 ))  )   ; ++len ){
-      // }
-      for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) )  )   ; ++len ){
-      }
-      if(len > 0){
-
-        res[k][static_cast<size_t>(len-1)] += pseq;  //weighted frequency
-        //res[k][len-1] += 1; //absolute frequency
-        i += len-1;
-        //std::cout<<"k "<<k<<" len  "<<len<<"res[k][len-1]   "<<res[k][len-1]<<std::endl;
-        break; //only 1 case is possible
-      }
-    }
-  }
-
-
-
-}
-
-
-
-
-
 //length of cascades
 template <typename T>
 void lencas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<double> >& res){
@@ -424,23 +381,30 @@ void lencas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<
   }
 
 
+
+
+  std::vector<int> tmp{Al2Al3A, Al2Al3nc, Al2Al3B, Bl2Bl3B,  Bl2Bl3nc, Bl2Bl3A};
+
+
+
   //the first two values are always no cascade
   for(int i=2; static_cast<size_t>(i) < ct.size(); ++i){
 
-    //check for all 9 cases
-    for(size_t k=0; k<18; ++k) {
+    //check for all relevant cases
+    for(size_t k=0; k<tmp.size(); ++k) {
       int len=0;
       // for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) || (ct[static_cast<size_t>(i+len)] == k+9 ))  )   ; ++len ){
       // }
-      for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) )  )   ; ++len ){
+      for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == tmp[k]) )  )   ; ++len ){
       }
       if(len > 0){
 
 
-        res[k%9][static_cast<size_t>(len-1)] += pseq;  //weighted len
-        //res[k][len-1] += len; //absolute length
-        i += len-1;
-        //std::cout<<"k "<<k<<" len  "<<len<<"res[k][len-1]   "<<res[k][len-1]<<std::endl;
+        res[tmp[k]][len-1] += pseq;
+        //res[tmp[k]][len-1] += 1;
+        i += len;
+        --i;
+        //std::cout<<"res[k][len-1]="<<"res["<<k<<"]"<<"["<<len-1<<"]: "<<res[tmp[k]][len-1]<<std::endl;
         break; //only 1 case is possible
       }
     }
@@ -470,7 +434,10 @@ void outputlcas(size_t tn, std::string filename, std::vector<std::vector<double>
   // }
   // output <<"signal,"<<w.q<<"\n\n";
 
-  std::vector<std::string> rows{"NC", "l2Al3A", "l2Bl3B", "l2Al3NC", "l2Bl3NC", "l3Al2NC", "l3Bl2NC", "l2Al3B", "l2Bl3A"};
+  //std::vector<std::string> rows{"NC", "l2Al3A", "l2Bl3B", "l2Al3NC", "l2Bl3NC", "l3Al2NC", "l3Bl2NC", "l2Al3B", "l2Bl3A"};
+  std::vector<std::string> rows{"Al2Al3A", "Al2Al3nc", "Al2Al3B", "Bl2Bl3B",  "Bl2Bl3nc", "Bl2Bl3A"};
+
+  std::vector<int> tmp{Al2Al3A, Al2Al3nc, Al2Al3B, Bl2Bl3B,  Bl2Bl3nc, Bl2Bl3A};
 
   // output<<"P(at|w=A)";
   // for(size_t i=0; i<9; ++i){
@@ -494,10 +461,10 @@ void outputlcas(size_t tn, std::string filename, std::vector<std::vector<double>
     output<<","<<i+1;
   }
   output << "\n";
-  for(size_t j=0; j<pt.size(); ++j){
+  for(size_t j=0; j<rows.size(); ++j){
     output<<rows[j];
     for(size_t i=0; i < pt[j].size(); ++i){
-      output<<","<<pt[j][i];
+      output<<","<<pt[tmp[j]][i];
     }
     output<<"\n";
   }
