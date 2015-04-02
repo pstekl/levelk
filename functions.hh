@@ -6,7 +6,6 @@ enum cases { Anc, Al2Al3A, Al2Bl3B, Al2Al3nc, Al2Bl3nc, Al2ncl3A, Al2ncl3B, Al2A
              Bnc, Bl2Al3A, Bl2Bl3B, Bl2Al3nc, Bl2Bl3nc, Bl2ncl3A, Bl2ncl3B, Bl2Al3B, Bl2Bl3A};
 
 
-l2Al3A Al2Al3nc Al2Al3B
 
 
 //A is 1
@@ -367,7 +366,7 @@ void outputsw(std::string filename, std::vector<T>& pt){
 
 //length of cascades
 template <typename T>
-void lencas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<double> >& res){
+void lencas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<double> >& res,  std::vector<std::vector<double> >& res2){
 
   //cascades can only emerge if size > 2
   if(ct.size() < 3)
@@ -401,7 +400,7 @@ void lencas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<
 
 
         res[tmp[k]][len-1] += pseq;
-        //res[tmp[k]][len-1] += 1;
+        res2[tmp[k]][len-1] += 1;
         i += len;
         --i;
         //std::cout<<"res[k][len-1]="<<"res["<<k<<"]"<<"["<<len-1<<"]: "<<res[tmp[k]][len-1]<<std::endl;

@@ -20,6 +20,9 @@ void cascadestats(levelkworld<double> w, size_t tn){
 
   //length
   std::vector<std::vector<double> > lcas(18, std::vector<double>(tn,0));
+  //length weigted with probability
+  std::vector<std::vector<double> > lcasp(18, std::vector<double>(tn,0));
+
 
   //freq switch over
   std::vector<double> fsw(8,0);
@@ -36,7 +39,7 @@ void cascadestats(levelkworld<double> w, size_t tn){
     // std::cout << "\n";
 
     coltab(x, ct);
-    lencas(w, ct, lcas);
+    lencas(w, ct, lcasp, lcas);
     freqswitchover(w, ct, fsw);
 
     // for(int i=0; i<4; ++i)
@@ -49,6 +52,7 @@ void cascadestats(levelkworld<double> w, size_t tn){
 
   //output lcas
   outputlcas(tn, "lencascades.csv", lcas);
+  outputlcas(tn, "lencascadesp.csv", lcasp);
   outputsw("switchover.csv", fsw);
 
   return ;
