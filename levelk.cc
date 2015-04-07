@@ -42,13 +42,8 @@ void cascadestats(levelkworld<double> w, size_t tn){
     lencas(w, ct, lcasp, lcas);
     freqswitchover(w, ct, fsw);
 
-    // for(int i=0; i<4; ++i)
-    //   std::cout<<fsw[i]<<" ";
-    // std::cout<<std::endl;
   }
 
-  // std::vector<std::vector<double> > freq(9, std::vector<double>(1,0.));
-  // outputlcas(tn, "freqcascades.csv", freq);
 
   //output lcas
   outputlcas(tn, "lencascades.csv", lcas);
@@ -137,6 +132,48 @@ int main() {
 
   seqprob(w, tn);
   cascadestats(w, tn);
+
+
+  // //freq switch over
+  // std::vector<double> fsw(8,0);
+
+
+  // //create sequences
+
+ //  std::cout<<"FROME HERE"<<std::endl;
+
+ // std::string sx1("11110000000011111111");
+ // std::reverse(std::begin(sx1), std::end(sx1));
+ // std::string sx2("00011111101111111111");
+ // std::reverse(std::begin(sx2), std::end(sx2));
+ //  boost::dynamic_bitset<> x1(sx1);
+ //  boost::dynamic_bitset<> x2(sx2);
+
+ //  std::vector<size_t> ct1(20,0.);
+ //  std::vector<size_t> ct2(20,0.);
+
+
+ //    coltab(x1, ct1);
+ //      // for (size_t k = 0; k < x1.size(); ++k)
+ //      //   std::cout << w.p[ct1[k]]<<", ";
+ //      // std::cout << "\n";
+ //      // for (size_t k = 0; k < x1.size(); ++k)
+ //      //   if(x1[k] == 1)
+ //      //     std::cout<<"A, ";
+ //      //   else
+ //      //     std::cout<<"B, ";
+ //      // std::cout << "\n";
+
+
+ //    coltab(x2, ct2);
+ //      // for (size_t k = 0; k < x2.size(); ++k)
+ //      //   std::cout << w.p[ct2[k]]<<", ";
+ //      // std::cout << "\n";
+ //    freqswitchover(w, ct1, fsw);
+
+
+
+ //  outputsw("switchover.csv", fsw);
 
 
 

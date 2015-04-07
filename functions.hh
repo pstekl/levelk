@@ -1,11 +1,13 @@
 
+//#define DEBUG
+
+
+
 typedef std::numeric_limits< double > dbl;
 
 
 enum cases { Anc, Al2Al3A, Al2Bl3B, Al2Al3nc, Al2Bl3nc, Al2ncl3A, Al2ncl3B, Al2Al3B, Al2Bl3A,
              Bnc, Bl2Al3A, Bl2Bl3B, Bl2Al3nc, Bl2Bl3nc, Bl2ncl3A, Bl2ncl3B, Bl2Al3B, Bl2Bl3A};
-
-
 
 
 //A is 1
@@ -260,71 +262,137 @@ void freqswitchover(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<doub
   }
 
 
-  int tmp=  -1;// last value in ct 0 A 1 B, -1 anything else
+  //int tmp=  -1;// last value in ct 0 A 1 B, -1 anything else
   int lastcas= -1;  //-1 unset or no cascade, 0 A cascade 1 B cascade
-  int plastcas= -1;  // cascade before lastcascade
+  int blastcas= -1;  // cascade before lastcascade
   //the first two values are always no cascade
   for(size_t i=2; i < ct.size(); ++i){
 
+#ifdef DEBUG
+    std::cout<<"ct["<<i<<"]: "<<ct[i]<<std::endl;
+#endif
+
+
+
     //A cascade
-    if((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc) ||
-       (ct[i] == Bl2Al3A) || (ct[i] == Bl2Al3B ) || (ct[i] == Bl2Al3nc) ) {
-
-      // tmp contains information about cascade of bit before
-      if ( tmp == 0 )  {//already in A cascade=> do nothing
-        continue;
+    if((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc)) {
+    acas:
+      for(;  i<ct.size(); ++i) {
+#ifdef DEBUG
+        std::cout<<"A cascade"<<std::endl;
+#endif
+        //broken A cascade
+        if((ct[i] == Bl2Al3A) || (ct[i] == Bl2Al3B ) || (ct[i] == Bl2Al3nc)) {
+          for(; i<ct.size(); ++i){
+#ifdef DEBUG
+            std::cout<<"broken A cascade"<<std::endl;
+#endif
+            if( (ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc) ) {
+              // switch over A to A cascade
+              res[0] += 1;
+              res[4] += pseq;
+#ifdef DEBUG
+              std::cout<<"switch over A to A cascade"<<std::endl;
+#endif
+              goto acas;
+            }
+            // switch over A to B cascade
+            if( (ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc) ) {
+              res[1] += 1;
+              res[5] += pseq;
+#ifdef DEBUG
+              std::cout<<"switch over A to B cascade"<<std::endl;
+#endif
+              goto bcas;
+            }
+          }
+        }
       }
-      if(lastcas == 0) { //switch over A to A cascade
-        res[0] += 1;
-        res[4] += pseq;
-      }
-      if(lastcas == 1) { //switch over B to A cascade
-        res[1] += 1;
-        res[5] += pseq;
-      }
-      lastcas = 0;
-
-      if((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc)) {
-        tmp = 0;
-      }
-      if((ct[i] == Bl2Al3A) || (ct[i] == Bl2Al3B ) || (ct[i] == Bl2Al3nc)){
-        tmp = 1;
-      }
-      continue;
     }
-
     //B cascade
-    if((ct[i] == Al2Bl3A) || (ct[i] == Al2Bl3B ) || (ct[i] == Al2Bl3nc) ||
-       (ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc) ) {
-
-      // tmp contains informaiton about cascade of bit before
-      if ( tmp == 1 )  {//already in B cascade=> do nothing
-        continue;
+    if((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)) {
+    bcas:
+      for(;  i<ct.size(); ++i) {
+#ifdef DEBUG
+        std::cout<<"B cascade"<<std::endl;
+#endif
+        //broken B cascade
+        if((ct[i] == Al2Bl3A) || (ct[i] == Al2Bl3B ) || (ct[i] == Al2Bl3nc) ) {
+          for(; i<ct.size(); ++i) {
+#ifdef DEBUG
+            std::cout<<"broken B cascade"<<std::endl;
+#endif
+            // switch over B to A cascade
+            if((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc))  {
+              res[2] += 1;
+              res[6] += pseq;
+#ifdef DEBUG
+              std::cout<<"switch over B to A cascade"<<std::endl;
+#endif
+              goto acas;
+            }
+            // switch over B to B cascade
+            if((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)) {
+              res[3] += 1;
+              res[7] += pseq;
+#ifdef DEBUG
+              std::cout<<"switch over B to B cascade"<<std::endl;
+#endif
+              goto bcas;
+            }
+          }
+        }
       }
-      if(lastcas == 0) { //switch over A to B cascade
-        res[2] += 1;
-        res[6] += pseq;
-      }
-      if(lastcas == 1) { //switch over B to B cascade
-        res[3] += 1;
-        res[7] += pseq;
-      }
-      lastcas = 1;
-      tmp = 1;
-
-      if ((ct[i] == Al2Bl3A) || (ct[i] == Al2Bl3B ) || (ct[i] == Al2Bl3nc)) {
-        tmp = 0;
-      }
-      if((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)){
-        tmp = 1;
-      }
-
-      continue;
     }
-    //anything else in ct[i] but A or B cascade
-    tmp = -1;
 
   }
+
+
+
+    // // switch over A to A cascade
+    // if( lastcas == 0 && blastcas == 0 && ((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc)) ) {
+    //     res[0] += 1;
+    //     res[4] += pseq;
+    //     blastcas = -1;
+    //     continue;
+    // }
+    // // switch over A to B cascade
+    // if(lastcas == 0 && blastcas == 0  && ((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)) ) {
+    //     res[1] += 1;
+    //     res[5] += pseq;
+    //     lastcas = 1;
+    //     blastcas = -1;
+    //     continue;
+    // }
+
+    // // switch over B to A cascade
+    // if( lastcas == 1 && blastcas == 1  && ((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc)) ) {
+    //     res[2] += 1;
+    //     res[6] += pseq;
+    //     blastcas = -1;
+    //     continue;
+    // }
+    // // switch over B to B cascade
+    // if( lastcas == 1 && blastcas == 1  && ((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)) ) {
+    //     res[3] += 1;
+    //     res[7] += pseq;
+    //     lastcas = 1;
+    //     blastcas = -1;
+    //     continue;
+    // }
+
+    // // broken A cascade
+    // if(lastcas == 0 && ((ct[i] == Bl2Al3A) || (ct[i] == Bl2Al3B ) || (ct[i] == Bl2Al3nc)) ) {
+    //   blastcas = 0;
+    //   continue;
+    // }
+    // // broken B cascade
+    // if (lastcas == 1 && (ct[i] == Al2Bl3A) || (ct[i] == Al2Bl3B ) || (ct[i] == Al2Bl3nc) ) {
+    //   blastcas = 1;
+    //   continue;
+    // }
+
+
 
 }
 
