@@ -57,7 +57,6 @@ void cascadestats(levelkworld<T> w, size_t tn){
 
       //only do for longest sequences
       if(i == tn-1) {
-        coltab(x, ct);
         lencas(w, ct, lcasp, lcas);
         freqswitchover(w, ct, fsw);
         firstlastcas(w, ct, flc);
