@@ -90,8 +90,6 @@ public:
 };
 
 
-
-
 // int signal(double q = 0.6) {
 //   std::random_device rd;
 //   std::mt19937 gen(rd());
@@ -113,435 +111,107 @@ public:
 // }
 
 
+struct l2info{
+  int A=0;
+  int B=0;
+};
+
 
 
 //detect cascade
 //@param cascade =0 NC, 1 AC, 2 BC
-size_t level2(boost::dynamic_bitset<> seq, size_t signal, size_t t, int& cascade){
-  int A=0;
-  int B=0;
-  //just observe until t-1
-  //for (boost::dynamic_bitset<>::size_type i = 0; i < t-1; ++i) {
-    for (size_t i = 0; i < t; ++i) {
-    if(seq[i] == 1) {
-      A+=1;
+void level2(int seq, l2info& tmp, int& cascade){
+
+
+    if(seq == 1) {
+      tmp.A+=1;
     }
     else {
-      B+=1;
+      tmp.B+=1;
     }
-  }
 
-  if(A-B>1) {
+  if(tmp.A-tmp.B>1) {
     cascade = 1;
     //std::cout<<"L2 A cascade"<<std::endl;
-    return 1; //A cascade => return A
+    return; //A cascade => return A
   }
-  if(B-A>1) {
+  if(tmp.B-tmp.A>1) {
     cascade = 2;
     //std::cout<<"L2 B cascade"<<std::endl;
-    return 0; //B cascade => return B
+    return; //B cascade => return B
   }
+
   //no cascade => return signal
   cascade = 0;
   //std::cout<<"L2 NO cascade"<<std::endl;
-  return signal;
 }
 
-//detect cascade and detect fake cascade
-//@param cascade =0 NC, 1 AC, 2 BC
-size_t level3(boost::dynamic_bitset<> seq, size_t signal, size_t t, int& cascade){
+
+struct l3info {
   int A=0;
   int B=0;
   int level3A=0;
   int level3B=0;
+};
 
 
-  //just observe until t-1
-  //for (boost::dynamic_bitset<>::size_type i = 0; i < t-1; ++i) {
-  for (size_t i = 0; i < t; ++i) {
+
+//detect cascade and detect fake cascade
+//@param cascade =0 NC, 1 AC, 2 BC
+void level3(int seq, l3info& tmp, int& cascade){
 
     //check for level2 cascade
-    if(std::abs(A-B)>1) {
+    if(std::abs(tmp.A-tmp.B)>1) {
       //check if already in A cascade => fake signal => do not increment A
-      if(A-B > 1) {
+      if(tmp.A-tmp.B > 1) {
         //std::cout<<"Already in l2 A cascade omit l3 A"<<std::endl;
-        if(seq[i] == 0) {
-          level3B+=1;
+        if(seq == 0) {
+          tmp.level3B+=1;
         }
       }
       //check if already in B cascade => fake signal => do not increment B
-      if(B-A > 1) {
+      if(tmp.B-tmp.A > 1) {
         //std::cout<<"Already in l2 B cascade omit l3 B"<<std::endl;
-        if(seq[i] == 1) {
-          level3A+=1;
+        if(seq == 1) {
+          tmp.level3A+=1;
         }
       }
     }
     // no cascade => increment
     else {
-      if(seq[i] == 1) {
-        level3A+=1;
+      if(seq == 1) {
+        tmp.level3A+=1;
       }
       else {
-        level3B+=1;
+        tmp.level3B+=1;
       }
     }
     //increment to check for level2 cascade
-    if(seq[i] == 1) {
-      A+=1;
+    if(seq == 1) {
+      tmp.A+=1;
     }
     else {
-      B+=1;
+      tmp.B+=1;
     }
 
-  }
 
-  if(level3A-level3B>1) {
+
+  if(tmp.level3A-tmp.level3B>1) {
     cascade = 1;
     //std::cout<<"L3 A cascade"<<std::endl;
-    return 1; //A cascade => return A
+    return; //A cascade => return A
   }
-  if(level3B-level3A>1) {
+  if(tmp.level3B-tmp.level3A>1) {
     cascade = 2;
     //std::cout<<"L3 B cascade"<<std::endl;
-    return 0; //B cascade => return B
+    return; //B cascade => return B
   }
 
     // no l3 cascade => return signal
   cascade=0;
   //std::cout<<"L3 NO cascade"<<std::endl;
-  return signal;
 
 }
-
-
-
-
-template <typename T>
-void tab2(levelkworld<T> w, std::vector<size_t>& ct, size_t i, std::vector<double>& res){
-
-  double tmp=1.;
-  //check for all 9 cases, respectively 18 (if one counts B cases too)
-  for(size_t k=0; k<9; ++k) {
-    if( (ct[i] == k) || (ct[i] == k+9) ) {
-      for(size_t j=0; j<i+1; ++j){
-        tmp *= w.p[ct[j]];
-      }
-      res[k] = tmp;
-      //speed up computation, because these others results must be zero
-      for(size_t l=k+1; l<9; ++l){
-        res[l] = 0.;
-      }
-      break;
-    }
-    else{
-      res[k] = 0.;
-    }
-  }
-
-  return;
-}
-
-
-
-
-
-
-//frequency of cascades
-template <typename T>
-void freqswitchover(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<double>& res){
-
-  //cascades can only emerge if size > 2
-  if(ct.size() < 3)
-    return;
-
-
-  double pseq=1.;
-  for(size_t j=0; j<ct.size(); ++j){
-    pseq *= w.p[ct[j]];
-  }
-
-
-  //int tmp=  -1;// last value in ct 0 A 1 B, -1 anything else
-  int lastcas= -1;  //-1 unset or no cascade, 0 A cascade 1 B cascade
-  int blastcas= -1;  // cascade before lastcascade
-  //the first two values are always no cascade
-  for(size_t i=2; i < ct.size(); ++i){
-
-#ifdef DEBUG
-    std::cout<<"ct["<<i<<"]: "<<ct[i]<<std::endl;
-#endif
-
-
-
-    //A cascade
-    if((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc)) {
-    acas:
-      for(;  i<ct.size(); ++i) {
-#ifdef DEBUG
-        std::cout<<"A cascade"<<std::endl;
-#endif
-        //broken A cascade
-        if((ct[i] == Bl2Al3A) || (ct[i] == Bl2Al3B ) || (ct[i] == Bl2Al3nc)) {
-          for(; i<ct.size(); ++i){
-#ifdef DEBUG
-            std::cout<<"broken A cascade"<<std::endl;
-#endif
-            if( (ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc) ) {
-              // switch over A to A cascade
-              res[0] += 1;
-              res[4] += pseq;
-#ifdef DEBUG
-              std::cout<<"switch over A to A cascade"<<std::endl;
-#endif
-              goto acas;
-            }
-            // switch over A to B cascade
-            if( (ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc) ) {
-              res[1] += 1;
-              res[5] += pseq;
-#ifdef DEBUG
-              std::cout<<"switch over A to B cascade"<<std::endl;
-#endif
-              goto bcas;
-            }
-          }
-        }
-      }
-    }
-    //B cascade
-    if((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)) {
-    bcas:
-      for(;  i<ct.size(); ++i) {
-#ifdef DEBUG
-        std::cout<<"B cascade"<<std::endl;
-#endif
-        //broken B cascade
-        if((ct[i] == Al2Bl3A) || (ct[i] == Al2Bl3B ) || (ct[i] == Al2Bl3nc) ) {
-          for(; i<ct.size(); ++i) {
-#ifdef DEBUG
-            std::cout<<"broken B cascade"<<std::endl;
-#endif
-            // switch over B to A cascade
-            if((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc))  {
-              res[2] += 1;
-              res[6] += pseq;
-#ifdef DEBUG
-              std::cout<<"switch over B to A cascade"<<std::endl;
-#endif
-              goto acas;
-            }
-            // switch over B to B cascade
-            if((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)) {
-              res[3] += 1;
-              res[7] += pseq;
-#ifdef DEBUG
-              std::cout<<"switch over B to B cascade"<<std::endl;
-#endif
-              goto bcas;
-            }
-          }
-        }
-      }
-    }
-
-  }
-
-
-
-    // // switch over A to A cascade
-    // if( lastcas == 0 && blastcas == 0 && ((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc)) ) {
-    //     res[0] += 1;
-    //     res[4] += pseq;
-    //     blastcas = -1;
-    //     continue;
-    // }
-    // // switch over A to B cascade
-    // if(lastcas == 0 && blastcas == 0  && ((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)) ) {
-    //     res[1] += 1;
-    //     res[5] += pseq;
-    //     lastcas = 1;
-    //     blastcas = -1;
-    //     continue;
-    // }
-
-    // // switch over B to A cascade
-    // if( lastcas == 1 && blastcas == 1  && ((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc)) ) {
-    //     res[2] += 1;
-    //     res[6] += pseq;
-    //     blastcas = -1;
-    //     continue;
-    // }
-    // // switch over B to B cascade
-    // if( lastcas == 1 && blastcas == 1  && ((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)) ) {
-    //     res[3] += 1;
-    //     res[7] += pseq;
-    //     lastcas = 1;
-    //     blastcas = -1;
-    //     continue;
-    // }
-
-    // // broken A cascade
-    // if(lastcas == 0 && ((ct[i] == Bl2Al3A) || (ct[i] == Bl2Al3B ) || (ct[i] == Bl2Al3nc)) ) {
-    //   blastcas = 0;
-    //   continue;
-    // }
-    // // broken B cascade
-    // if (lastcas == 1 && (ct[i] == Al2Bl3A) || (ct[i] == Al2Bl3B ) || (ct[i] == Al2Bl3nc) ) {
-    //   blastcas = 1;
-    //   continue;
-    // }
-
-
-
-}
-
-
-
-
-//output
-template <typename T>
-void outputsw(std::string filename, std::vector<T>& pt){
-
-
-  std::ofstream output;
-  output.precision(dbl::digits10);
-  output.setf( std::ios::fixed);
-  output.open (filename);
-
-
-
-  std::vector<std::string> rows{"A to A", "A to B", "B to A", "B to B"};
-
-
-  output<<std::endl;
-
-  output <<"Switch over:";
-  output << "\n";
-  for(size_t j=0; j<4; ++j){
-    output<<rows[j];
-    output<<","<<pt[j]<<","<<pt[j+4];
-    output<<"\n";
-  }
-
-  output.close();
-
-}
-
-
-
-
-
-//length of cascades
-template <typename T>
-void lencas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<double> >& res,  std::vector<std::vector<double> >& res2){
-
-  //cascades can only emerge if size > 2
-  if(ct.size() < 3)
-    return;
-
-
-  double pseq=1.;
-
-  for(size_t j=0; j<ct.size(); ++j){
-    pseq *= w.p[ct[j]];
-  }
-
-
-
-
-  std::vector<int> tmp{Al2Al3A, Al2Al3nc, Al2Al3B, Bl2Bl3B,  Bl2Bl3nc, Bl2Bl3A};
-
-
-
-  //the first two values are always no cascade
-  for(int i=2; static_cast<size_t>(i) < ct.size(); ++i){
-
-    //check for all relevant cases
-    for(size_t k=0; k<tmp.size(); ++k) {
-      int len=0;
-      // for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) || (ct[static_cast<size_t>(i+len)] == k+9 ))  )   ; ++len ){
-      // }
-      for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == tmp[k]) )  )   ; ++len ){
-      }
-      if(len > 0){
-
-
-        res[tmp[k]][len-1] += pseq;
-        res2[tmp[k]][len-1] += 1;
-        i += len;
-        --i;
-        //std::cout<<"res[k][len-1]="<<"res["<<k<<"]"<<"["<<len-1<<"]: "<<res[tmp[k]][len-1]<<std::endl;
-        break; //only 1 case is possible
-      }
-    }
-  }
-
-
-
-}
-
-
-
-
-//output
-void outputlcas(size_t tn, std::string filename, std::vector<std::vector<double> >& pt){
-
-
-  std::ofstream output;
-  output.precision(dbl::digits10);
-  output.setf( std::ios::fixed);
-  output.open (filename);
-
-  // //level k world parameters
-  // std::vector<std::string> lkwrows{"l0ratio", "l1ratio", "l2ratio", "l3ratio"};
-  // output << "level k world parameters\n";
-  // for(size_t i=0; i<4; ++i){
-  //   output << lkwrows[i]<<","<<w.lkr[i] <<"\n";
-  // }
-  // output <<"signal,"<<w.q<<"\n\n";
-
-  //std::vector<std::string> rows{"NC", "l2Al3A", "l2Bl3B", "l2Al3NC", "l2Bl3NC", "l3Al2NC", "l3Bl2NC", "l2Al3B", "l2Bl3A"};
-  std::vector<std::string> rows{"Al2Al3A", "Al2Al3nc", "Al2Al3B", "Bl2Bl3B",  "Bl2Bl3nc", "Bl2Bl3A"};
-
-  std::vector<int> tmp{Al2Al3A, Al2Al3nc, Al2Al3B, Bl2Bl3B,  Bl2Bl3nc, Bl2Bl3A};
-
-  // output<<"P(at|w=A)";
-  // for(size_t i=0; i<9; ++i){
-  //   output<<","<<rows[i];
-  // }
-  // output<<std::endl;
-  // output<<"A";
-  // for(size_t i=0; i<9; ++i){
-  //   output<<","<<w.p[i];
-  // }
-  // output<<std::endl;
-  // output<<"B";
-  // for(size_t i=0; i<9; ++i){
-  //   output<<","<<1.- w.p[i];
-  // }
-  // output<<std::endl;
-  output<<std::endl;
-
-  output <<"length";
-  for(size_t i=0; i<tn;++i) {
-    output<<","<<i+1;
-  }
-  output << "\n";
-  for(size_t j=0; j<rows.size(); ++j){
-    output<<rows[j];
-    for(size_t i=0; i < pt[j].size(); ++i){
-      output<<","<<pt[tmp[j]][i];
-    }
-    output<<"\n";
-  }
-
-  output.close();
-
-}
-
-
-
 
 
 
@@ -549,24 +219,33 @@ void outputlcas(size_t tn, std::string filename, std::vector<std::vector<double>
 //compute tab1 coloured table
 size_t coltab(boost::dynamic_bitset<>& x, std::vector<size_t>& res){
 
-  // p[Anc] = nc();
-  //   p[Al2Al3A] = l2l3A();
-  //   p[Al2Bl3B] = l2l3B();
-  //   p[Al2Al3nc] = l2A();
-  //   p[Al2Bl3nc] = l2B();
-  //   p[Al2ncl3A] = l3A();
-  //   p[Al2ncl3B] = l3B();
-  //   p[Al2Al3B] = l2Al3B();
-  //   p[Al2Bl3A] = l2Bl3A();
 
-  for(size_t i=0; i<x.size(); ++i){
+  l2info level2info;
+  l3info level3info;
+
+  //cascades can only emerge if size > 2
+  for(int i=0; (i<2) && (i<x.size()); ++i){
+     // A
+      if(x[i] == 1) {
+        res[i] = Anc;
+      }
+      else{ // B
+        res[i] = Bnc;
+      }
+  }
+
+
+  for(int i=2; i<x.size(); ++i){
     int l2c=-1;
     int l3c=-1;
 
     //check in which state the levelks would be at bit i
     //@param cascade =0 NC, 1 AC, 2 BC
-    level2(x, 0, i, l2c);
-    level3(x, 0, i, l3c);
+
+      level2(x[i-1], level2info, l2c);
+      level3(x[i-1], level3info, l3c);
+
+
     // std::cout<<"l2c: "<<l2c<<std::endl;
     // std::cout<<"l3c: "<<l3c<<std::endl;
 
@@ -677,6 +356,355 @@ size_t coltab(boost::dynamic_bitset<>& x, std::vector<size_t>& res){
   }
 
   return 0.;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+void tab2(levelkworld<T> w, std::vector<size_t>& ct, size_t i, std::vector<double>& res){
+
+  double tmp=1.;
+  //check for all 9 cases, respectively 18 (if one counts B cases too)
+  for(size_t k=0; k<9; ++k) {
+    if( (ct[i] == k) || (ct[i] == k+9) ) {
+      for(size_t j=0; j<i+1; ++j){
+        tmp *= w.p[ct[j]];
+      }
+      res[k] = tmp;
+      //speed up computation, because these others results must be zero
+      for(size_t l=k+1; l<9; ++l){
+        res[l] = 0.;
+      }
+      break;
+    }
+    else{
+      res[k] = 0.;
+    }
+  }
+
+  return;
+}
+
+
+
+//first and last cas
+template <typename T>
+void firstlastcas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<double>& res){
+
+  //cascades can only emerge if size > 2
+  if(ct.size() < 3)
+    return;
+
+
+  double pseq=1.;
+  for(size_t j=0; j<ct.size(); ++j){
+    pseq *= w.p[ct[j]];
+  }
+
+
+  //check for first cascades
+  for(size_t i=2; i < ct.size(); ++i){
+
+    //A cascade
+    if((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc)) {
+      res[0] += pseq;
+      res[4] += 1;
+      break;
+    }
+    //B cascade
+    if((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)) {
+      res[1] += pseq;
+      res[5] += 1;
+      break;
+    }
+
+  }
+
+  //check for last cascades
+  for(size_t i=ct.size(); i > 1; --i){
+
+    //A cascade
+    if((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc)) {
+      res[2] += pseq;
+      res[6] += 1;
+      break;
+    }
+    //B cascade
+    if((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)) {
+      res[3] += pseq;
+      res[7] += 1;
+      break;
+    }
+
+  }
+
+}
+
+
+//output
+template <typename T>
+void outputflc(std::string filename, std::vector<T>& pt){
+
+
+  std::ofstream output;
+  output.precision(dbl::digits10);
+  output.setf( std::ios::fixed);
+  output.open (filename);
+
+
+
+  std::vector<std::string> rows{"A first", "B first", "A end", "B end"};
+
+
+  output<<std::endl;
+
+  output <<"FirstLastCas:, Probability, Number";
+  output << "\n";
+  for(size_t j=0; j<4; ++j){
+    output<<rows[j];
+    output<<","<<pt[j]<<","<<pt[j+4];
+    output<<"\n";
+  }
+
+  output.close();
+
+}
+
+
+
+
+//frequency of cascades
+template <typename T>
+void freqswitchover(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<double>& res){
+
+  //cascades can only emerge if size > 2
+  if(ct.size() < 3)
+    return;
+
+
+  double pseq=1.;
+  for(size_t j=0; j<ct.size(); ++j){
+    pseq *= w.p[ct[j]];
+  }
+
+
+  //the first two values are always no cascade
+  for(size_t i=2; i < ct.size(); ++i){
+
+#ifdef DEBUG
+    std::cout<<"ct["<<i<<"]: "<<ct[i]<<std::endl;
+#endif
+
+
+
+    //A cascade
+    if((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc)) {
+    acas:
+      for(;  i<ct.size(); ++i) {
+#ifdef DEBUG
+        std::cout<<"A cascade"<<std::endl;
+#endif
+        //broken A cascade
+        if((ct[i] == Bl2Al3A) || (ct[i] == Bl2Al3B ) || (ct[i] == Bl2Al3nc)) {
+          for(; i<ct.size(); ++i){
+#ifdef DEBUG
+            std::cout<<"broken A cascade"<<std::endl;
+#endif
+            if( (ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc) ) {
+              // switch over A to A cascade
+              res[0] += 1;
+              res[4] += pseq;
+#ifdef DEBUG
+              std::cout<<"switch over A to A cascade"<<std::endl;
+#endif
+              goto acas;
+            }
+            // switch over A to B cascade
+            if( (ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc) ) {
+              res[1] += 1;
+              res[5] += pseq;
+#ifdef DEBUG
+              std::cout<<"switch over A to B cascade"<<std::endl;
+#endif
+              goto bcas;
+            }
+          }
+        }
+      }
+    }
+    //B cascade
+    if((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)) {
+    bcas:
+      for(;  i<ct.size(); ++i) {
+#ifdef DEBUG
+        std::cout<<"B cascade"<<std::endl;
+#endif
+        //broken B cascade
+        if((ct[i] == Al2Bl3A) || (ct[i] == Al2Bl3B ) || (ct[i] == Al2Bl3nc) ) {
+          for(; i<ct.size(); ++i) {
+#ifdef DEBUG
+            std::cout<<"broken B cascade"<<std::endl;
+#endif
+            // switch over B to A cascade
+            if((ct[i] == Al2Al3A) || (ct[i] == Al2Al3B ) || (ct[i] == Al2Al3nc))  {
+              res[2] += 1;
+              res[6] += pseq;
+#ifdef DEBUG
+              std::cout<<"switch over B to A cascade"<<std::endl;
+#endif
+              goto acas;
+            }
+            // switch over B to B cascade
+            if((ct[i] == Bl2Bl3A) || (ct[i] == Bl2Bl3B ) || (ct[i] == Bl2Bl3nc)) {
+              res[3] += 1;
+              res[7] += pseq;
+#ifdef DEBUG
+              std::cout<<"switch over B to B cascade"<<std::endl;
+#endif
+              goto bcas;
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+
+
+
+
+}
+
+
+
+
+//output
+template <typename T>
+void outputsw(std::string filename, std::vector<T>& pt){
+
+
+  std::ofstream output;
+  output.precision(dbl::digits10);
+  output.setf( std::ios::fixed);
+  output.open (filename);
+
+
+
+  std::vector<std::string> rows{"A to A", "A to B", "B to A", "B to B"};
+
+
+  output<<std::endl;
+
+  output <<"Switch over:";
+  output << "\n";
+  for(size_t j=0; j<4; ++j){
+    output<<rows[j];
+    output<<","<<pt[j]<<","<<pt[j+4];
+    output<<"\n";
+  }
+
+  output.close();
+
+}
+
+
+
+
+
+//length of cascades
+template <typename T>
+void lencas(levelkworld<T> w, std::vector<size_t>& ct,  std::vector<std::vector<double> >& res,  std::vector<std::vector<double> >& res2){
+
+  //cascades can only emerge if size > 2
+  if(ct.size() < 3)
+    return;
+
+
+  double pseq=1.;
+
+  for(size_t j=0; j<ct.size(); ++j){
+    pseq *= w.p[ct[j]];
+  }
+
+
+
+
+  std::vector<int> tmp{Al2Al3A, Al2Al3nc, Al2Al3B, Bl2Bl3B,  Bl2Bl3nc, Bl2Bl3A};
+
+
+
+  //the first two values are always no cascade
+  for(int i=2; static_cast<size_t>(i) < ct.size(); ++i){
+
+    //check for all relevant cases
+    for(size_t k=0; k<tmp.size(); ++k) {
+      int len=0;
+      // for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == k) || (ct[static_cast<size_t>(i+len)] == k+9 ))  )   ; ++len ){
+      // }
+      for( ; ( static_cast<size_t>(i+len)<ct.size() && ( (ct[static_cast<size_t>(i+len)] == tmp[k]) )  )   ; ++len ){
+      }
+      if(len > 0){
+
+
+        res[tmp[k]][len-1] += pseq;
+        res2[tmp[k]][len-1] += 1;
+        i += len;
+        --i;
+        //std::cout<<"res[k][len-1]="<<"res["<<k<<"]"<<"["<<len-1<<"]: "<<res[tmp[k]][len-1]<<std::endl;
+        break; //only 1 case is possible
+      }
+    }
+  }
+
+
+
+}
+
+
+
+
+//output
+void outputlcas(size_t tn, std::string filename, std::vector<std::vector<double> >& pt){
+
+
+  std::ofstream output;
+  output.precision(dbl::digits10);
+  output.setf( std::ios::fixed);
+  output.open (filename);
+
+
+  std::vector<std::string> rows{"Al2Al3A", "Al2Al3nc", "Al2Al3B", "Bl2Bl3B",  "Bl2Bl3nc", "Bl2Bl3A"};
+
+  std::vector<int> tmp{Al2Al3A, Al2Al3nc, Al2Al3B, Bl2Bl3B,  Bl2Bl3nc, Bl2Bl3A};
+
+  output<<std::endl;
+
+  output <<"length";
+  for(size_t i=0; i<tn;++i) {
+    output<<","<<i+1;
+  }
+  output << "\n";
+  for(size_t j=0; j<rows.size(); ++j){
+    output<<rows[j];
+    for(size_t i=0; i < pt[j].size(); ++i){
+      output<<","<<pt[tmp[j]][i];
+    }
+    output<<"\n";
+  }
+
+  output.close();
+
 }
 
 

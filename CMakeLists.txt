@@ -5,6 +5,9 @@ set(CMAKE_CXX_COMPILER "clang++")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything -Wall -Wno-long-long -pedantic")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
 
+set(CMAKE_BUILD_TYPE Release)
+
+
 project (levelk)
 add_executable(levelk levelk.cc)
 

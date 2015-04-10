@@ -14,61 +14,32 @@
 
 
 
-
-
-void cascadestats(levelkworld<double> w, size_t tn){
-
-  //length
-  std::vector<std::vector<double> > lcas(18, std::vector<double>(tn,0));
-  //length weigted with probability
-  std::vector<std::vector<double> > lcasp(18, std::vector<double>(tn,0));
-
-
-  //freq switch over
-  std::vector<double> fsw(8,0);
-
-
-  //create sequences
-  for(size_t j=0; j < (1<<(tn)); ++j){
-
-    boost::dynamic_bitset<> x(tn, j);
-    std::vector<size_t> ct(tn,0.);
-
-    // for (boost::dynamic_bitset<>::size_type k = 0; k < x.size(); ++k)
-    //   std::cout << x[k];
-    // std::cout << "\n";
-
-    coltab(x, ct);
-    lencas(w, ct, lcasp, lcas);
-    freqswitchover(w, ct, fsw);
-
-  }
-
-
-  //output lcas
-  outputlcas(tn, "lencascades.csv", lcas);
-  outputlcas(tn, "lencascadesp.csv", lcasp);
-  outputsw("switchover.csv", fsw);
-
-  return ;
-}
-
-
-
-
-
-
 //calculate and output probability of sequence,
 // efficiency and public belief
+//and cascade statistics
 template <typename T>
-void seqprob(levelkworld<T> w, size_t tn){
+void cascadestats(levelkworld<T> w, size_t tn){
 
 
   //probabilities for the 9 cases + 1 chksum + 1 efficiency +1 public belief
   std::vector<std::vector<double> > pt(12, std::vector<double>(tn,0.));
 
+
+ //length
+  std::vector<std::vector<double> > lcas(18, std::vector<double>(tn,0));
+  //length weigted with probability
+  std::vector<std::vector<double> > lcasp(18, std::vector<double>(tn,0));
+  //freq switch over
+  std::vector<double> fsw(8,0);
+  //first last cascade
+  std::vector<double> flc(8,0);
+
+
   //create sequences
   for(size_t i=0; i < tn ; ++i) {
+
+    std::cout<<"LEVEL: "<<i<<std::endl;
+
     for(size_t j=0; j < (1<<(i+1)); ++j){
 
       boost::dynamic_bitset<> x(i+1, j);
@@ -83,6 +54,14 @@ void seqprob(levelkworld<T> w, size_t tn){
       // for (size_t k = 0; k < x.size(); ++k)
       //   std::cout << w.p[ct[k]]<<", ";
       // std::cout << "\n";
+
+      //only do for longest sequences
+      if(i == tn-1) {
+        coltab(x, ct);
+        lencas(w, ct, lcasp, lcas);
+        freqswitchover(w, ct, fsw);
+        firstlastcas(w, ct, flc);
+      }
 
 
 
@@ -109,6 +88,13 @@ void seqprob(levelkworld<T> w, size_t tn){
   //output results
   output(w, tn, pt);
 
+  //output lcas
+  outputlcas(tn, "lencascades.csv", lcas);
+  outputlcas(tn, "lencascadesp.csv", lcasp);
+  outputsw("switchover.csv", fsw);
+  outputflc("firstlastcas.csv", flc);
+
+
   return;
 }
 
@@ -130,8 +116,8 @@ int main() {
                         pt.get<double>("levelkworld.signal") );
 
 
-  seqprob(w, tn);
   cascadestats(w, tn);
+
 
 
   // //freq switch over
@@ -174,7 +160,6 @@ int main() {
 
 
  //  outputsw("switchover.csv", fsw);
-
 
 
 
